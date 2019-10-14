@@ -26,7 +26,7 @@ set (SRC src/main.cpp
         src/Poll.h
         src/Taper.cpp
         src/Window.cpp
-        )
+        src/SoundfileStream.h src/SoundfileReader.h src/SoundfileWriter.h)
 
 add_executable(crone ${SRC})
 
