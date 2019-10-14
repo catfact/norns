@@ -20,7 +20,7 @@ crone::SoftCutClient::SoftCutClient() : Client<2, 2>("softcut") {
     }
 }
 
-void crone::SoftCutClient::process(jack_nframes_t numFrames) {
+void crone::SoftCutClient::processAudioBlock(jack_nframes_t numFrames) {
     Commands::softcutCommands.handlePending(this);
     clearBusses(numFrames);
     mixInput(numFrames);

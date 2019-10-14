@@ -32,7 +32,7 @@ namespace  crone {
         // called from audio thread
         void handleCommand(Commands::CommandPacket *p) override;
     private:
-        void process(jack_nframes_t numFrames) override;
+        void processAudioBlock(jack_nframes_t numFrames) override;
         void setSampleRate(jack_nframes_t) override;
     private:
         void processFx(size_t numFrames);

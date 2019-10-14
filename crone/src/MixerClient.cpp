@@ -14,7 +14,7 @@ using namespace crone;
 
 MixerClient::MixerClient() : Client<6, 6>("crone") {}
 
-void MixerClient::process(jack_nframes_t numFrames) {
+void MixerClient::processAudioBlock(jack_nframes_t numFrames) {
     Commands::mixerCommands.handlePending(this);
 
     // copy inputs

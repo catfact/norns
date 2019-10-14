@@ -42,7 +42,7 @@ namespace crone {
         softcut::phase_t quantPhase[NumVoices];
 
     private:
-        void process(jack_nframes_t numFrames) override;
+        void processAudioBlock(jack_nframes_t numFrames) override;
         void setSampleRate(jack_nframes_t) override;
         inline size_t secToFrame(float sec) {
             return static_cast<size_t >(sec * jack_get_sample_rate(Client::client));

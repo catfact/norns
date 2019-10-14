@@ -61,7 +61,7 @@ namespace crone {
         }
         // process using our source and sink pointers.
         // subclasses must implement this!
-        virtual void process(jack_nframes_t numFrames) = 0;
+        virtual void processAudioBlock(jack_nframes_t numFrames) = 0;
 
         virtual void setSampleRate(jack_nframes_t sr) = 0;
     public:
@@ -74,7 +74,7 @@ namespace crone {
         static int callback(jack_nframes_t numFrames, void*data) {
             auto *self = (Client*)(data);
             self->preProcess(numFrames);
-            self->process(numFrames);
+            self->processAudioBlock(numFrames);
             return 0;
         }
         // static handler for shutdown from jack
