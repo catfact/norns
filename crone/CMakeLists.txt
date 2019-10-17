@@ -24,9 +24,13 @@ set (SRC src/main.cpp
         src/SoftCutClient.cpp
         src/SoftCutClient.h
         src/Poll.h
+        src/TapeReader.h
+        src/TapeReader.cpp
         src/Taper.cpp
         src/Window.cpp
-        src/SoundfileStream.h src/SoundfileReader.h src/SoundfileWriter.h)
+        src/SoundfileStream.h src/TapeReader.cpp)
+#        src/SoundfileReader.h
+#        src/SoundfileWriter.h)
 
 add_executable(crone ${SRC})
 
@@ -58,3 +62,18 @@ CXX_EXTENSIONS YES
 )
 
 target_compile_options(crone PRIVATE -Wall -Wextra -pedantic)
+
+#-------------------------------
+#--- tape test
+add_executable(tape src/TapeReader.h src/TapeReader.cpp src/TapeTestMain.cpp)
+
+
+set_target_properties(tape PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS YES
+        )
+
+
+target_link_libraries(tape sndfile)
+target_link_libraries(tape jack)

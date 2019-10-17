@@ -10,7 +10,10 @@
 namespace crone {
 
     template<int numChannels>
-    class Reader : public SoundfileStream<numChannels> {
+    class Reader : public SoundfileStream<numChannels, > {
+    public:
+        bool loopMode = true;
+        bool pauseMode = true;
     private:
         typedef SoundfileStream<numChannels> Super;
         typedef typename Super::Sample Sample;
@@ -26,90 +29,95 @@ namespace crone {
         bool needsData{};
 
     private:
-        // prime the ringbuffer
-        bool prime() {
-            jack_ringbuffer_t *rb = this->ringBuf.get();
-            size_t framesToRead = jack_ringbuffer_write_space(rb) / Super::frameSize;
-            if (framesToRead > maxFramesToRead) { framesToRead = maxFramesToRead; };
-            auto framesRead = (size_t) sf_readf_float(this->file, diskInBuf, framesToRead);
-            jack_ringbuffer_write(rb, (char *) diskInBuf, Super::frameSize * framesRead);
-
-            if (framesRead != framesToRead) {
-                std::cerr << "Tape::Reader: warning! priming not complete" << std::endl;
-                Super::shouldStop = true;
-                return false;
-            }
-
-            return true;
-        }
+//        // prime the ringbuffer
+//        bool prime() {
+//            jack_ringbuffer_t *rb = this->ringBuf.get();
+//            size_t framesToRead = jack_ringbuffer_write_space(rb) / Super::frameSize;
+//            if (framesToRead > maxFramesToRead) { framesToRead = maxFramesToRead; };
+//            auto framesRead = (size_t) sf_readf_float(this->file, diskInBuf, framesToRead);
+//            jack_ringbuffer_write(rb, (char *) diskInBuf, Super::frameSize * framesRead);
+//
+//            if (framesRead != framesToRead) {
+//                std::cerr << "Tape::Reader: warning! priming not complete" << std::endl;
+//                Super::shouldStop = true;
+//                return false;
+//            }
+//
+//            return true;
+//        }
 
     public:
         // from audio thread
-        void process(float *dst[numChannels], size_t numFrames) {
-            if (!Super::isRunning || !isPrimed) {
-                for (size_t fr = 0; fr < numFrames; ++fr) {
-                    for (int ch = 0; ch < numChannels; ++ch) {
-                        dst[ch][fr] = 0.f;
-                    }
-                }
-                return;
-            }
-
-            jack_ringbuffer_t* rb = this->ringBuf.get();
-            auto framesInBuf = jack_ringbuffer_read_space(rb) / Super::frameSize;
-
-            //  if ringbuf isn't full enough, it's probably cause we're at EOF
-            if(framesInBuf < numFrames) {
-
-                // pull from ringbuffer
-                jack_ringbuffer_read(rb, (char*)pullBuf, framesInBuf * Super::frameSize);
-                float* src = pullBuf;
-                size_t fr = 0;
-                // de-interleave, apply amp, copy to output
-                while (fr < framesInBuf) {
-                    float amp = Super::getEnvSample();
-                    for (int ch = 0; ch < numChannels; ++ch) {
-                        dst[ch][fr] = *src++ * amp;
-                    }
-                    fr++;
-                }
-                while(fr < numFrames) {
-                    for (int ch = 0; ch < numChannels; ++ch) {
-                        dst[ch][fr] = 0.f;
-                    }
-                    fr++;
-                }
-                Super::isRunning = false;
-            } else {
-
-                // pull from ringbuffer
-                jack_ringbuffer_read(rb, (char *) pullBuf, numFrames * Super::frameSize);
-
-                if (this->mut.try_lock()) {
-                    this->needsData = true;
-                    this->cv.notify_one();
-                    this->mut.unlock();
-                }
-
-                float *src = pullBuf;
-
-                if (framesProcessed > (framesBeforeFadeout-numFrames)) {
-                    if (Super::envState != Super::EnvState::Stopping) {
-                        Super::envState = Super::EnvState::Stopping;
-                    }
-                }
-
-                // de-interleave, apply amp, copy to output
-                for (size_t fr = 0; fr < numFrames; ++fr) {
-                    float amp = Super::getEnvSample();
-                    for (int ch = 0; ch < numChannels; ++ch) {
-                        dst[ch][fr] = *src++ * amp;
-                    }
-                }
-
-                framesProcessed += numFrames;
-            }
-        }
+//        void process(float *dst[numChannels], size_t numFrames) {
+//            if (!Super::isRunning || !isPrimed) {
+//                for (size_t fr = 0; fr < numFrames; ++fr) {
+//                    for (int ch = 0; ch < numChannels; ++ch) {
+//                        dst[ch][fr] = 0.f;
+//                    }
+//                }
+//                return;
+//            }
+//
+//            jack_ringbuffer_t* rb = this->ringBuf.get();
+//            auto framesInBuf = jack_ringbuffer_read_space(rb) / Super::frameSize;
+//
+//            //  if ringbuf isn't full enough, it's probably cause we're at EOF
+//            if(framesInBuf < numFrames) {
+//
+//                // pull from ringbuffer
+//                jack_ringbuffer_read(rb, (char*)pullBuf, framesInBuf * Super::frameSize);
+//                float* src = pullBuf;
+//                size_t fr = 0;
+//                // de-interleave, apply amp, copy to output
+//                while (fr < framesInBuf) {
+//                    float amp = Super::getEnvSample();
+//                    for (int ch = 0; ch < numChannels; ++ch) {
+//                        dst[ch][fr] = *src++ * amp;
+//                    }
+//                    fr++;
+//                }
+//                // zero the remainder
+//                while(fr < numFrames) {
+//                    for (int ch = 0; ch < numChannels; ++ch) {
+//                        dst[ch][fr] = 0.f;
+//                    }
+//                    fr++;
+//                }
+//                if (loopMode) {
+//                    start();
+//                } else {
+//                    Super::isRunning = false;
+//                }
+//            } else {
+//
+//                // pull from ringbuffer
+//                jack_ringbuffer_read(rb, (char *) pullBuf, numFrames * Super::frameSize);
+//
+//                if (this->mut.try_lock()) {
+//                    this->needsData = true;
+//                    this->cv.notify_one();
+//                    this->mut.unlock();
+//                }
+//
+//                float *src = pullBuf;
+//
+//                if (framesProcessed > (framesBeforeFadeout-numFrames)) {
+//                    if (Super::envState != Super::EnvState::Stopping) {
+//                        Super::envState = Super::EnvState::Stopping;
+//                    }
+//                }
+//
+//                // de-interleave, apply amp, copy to output
+//                for (size_t fr = 0; fr < numFrames; ++fr) {
+//                    float amp = Super::getEnvSample();
+//                    for (int ch = 0; ch < numChannels; ++ch) {
+//                        dst[ch][fr] = *src++ * amp;
+//                    }
+//                }
+//
+//                framesProcessed += numFrames;
+//            }
+//        }
 
         // from any thread
         bool open(const std::string &path) {
@@ -130,12 +138,17 @@ namespace crone {
 
             this->frames = static_cast<size_t>(sfInfo.frames);
             framesBeforeFadeout = this->frames - Window::raisedCosShortLen - 1;
-            framesProcessed = 0;
-
-            jack_ringbuffer_reset(this->ringBuf.get());
-            isPrimed = false;
-
             return this->frames > 0;
+        }
+
+        void start() override {
+            if (pauseMode) {
+            } else {
+                framesProcessed = 0;
+                jack_ringbuffer_reset(this->ringBuf.get());
+                isPrimed = false;
+                Super::start();
+            }
         }
 
     private:

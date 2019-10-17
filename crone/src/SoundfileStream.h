@@ -20,10 +20,10 @@
 
 namespace crone {
 
-template <int numChannels>
+    template <int numChannels, int bufFrames>
     class SoundfileStream {
-        friend  class SoundfileReader;
-        friend  class SoundfileWriters;
+//        friend  class SoundfileReader;
+//        friend  class SoundfileWriter;
     protected:
         typedef jack_default_audio_sample_t Sample;
         static constexpr size_t sampleSize = sizeof(Sample);
@@ -39,12 +39,12 @@ template <int numChannels>
         std::unique_ptr<jack_ringbuffer_t> ringBuf;
         volatile int status;
 
-        typedef enum {
-            Starting, Playing, Stopping, Stopped
-        } EnvState;
-
-        std::atomic<EnvState> envState;
-        std::atomic<int> envIdx;
+//        typedef enum {
+//            Starting, Playing, Stopping, Stopped
+//        } EnvState;
+//
+//        std::atomic<EnvState> envState;
+//        std::atomic<int> envIdx;
 
     public:
         std::atomic<bool> isRunning;
@@ -63,7 +63,7 @@ template <int numChannels>
         }
 
         // from any thread
-        void start() {
+        virtual void start() {
             if (isRunning) {
                 return;
             } else {
