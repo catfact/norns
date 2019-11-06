@@ -81,12 +81,11 @@ end
 --- load a script from the /scripts folder.
 -- @param filename (string) - file to load. leave blank to reload current file.
 Script.load = function(filename)
+  local name, path, relative
   if filename == nil then
     filename = norns.state.script
     name = norns.state.name
-    shortname = norns.state.name:match("([^/]+)$")
     path = norns.state.path
-    data = norns.state.data
   else
 	if string.sub(filename,1,1) == "/" then
 	  relative = string.sub(filename,string.len(_path["dust"]))
@@ -110,25 +109,29 @@ Script.load = function(filename)
 
   print("# script load: " .. filename)
 
-  -- script local state
-  local state = { }
-
-  setmetatable(_G, {
-    __index = function (t,k)
-      return state[k]
-    end,
-    __newindex = function(t,k,v)
-      state[k] = v
-    end,
-  })
-
   local f=io.open(filename,"r")
   if f==nil then
     print("file not found: "..filename)
   else
     io.close(f)
-    if pcall(cleanup) then print("# cleanup")
-    else print("### cleanup failed") end
+    local ok, err
+    ok, err = pcall(cleanup)
+    if ok then print("# cleanup")
+    else
+      print("### cleanup failed with error: "..err)
+    end
+
+    -- script local state
+    local state = { }
+
+    setmetatable(_G, {
+      __index = function (t,k)
+        return state[k]
+      end,
+      __newindex = function(t,k,v)
+        state[k] = v
+      end,
+    })
 
     Script.clear() -- clear script variables and functions
 
