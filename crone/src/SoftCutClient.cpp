@@ -75,118 +75,154 @@ void crone::SoftCutClient::handleCommand(Commands::CommandPacket *p) {
     switch (p->id) {
         //-- softcut routing
         case Commands::Id::SET_ENABLED_CUT:
+	    std::cout << "SoftcutClient handling SET_ENABLED_CUT" << std::endl;
             enabled[p->idx_0] = p->value > 0.f;
             break;
         case Commands::Id::SET_LEVEL_CUT:
+	    std::cout << "SoftcutClient handling SET_LEVEL_CUT" << std::endl;
             outLevel[p->idx_0].setTarget(p->value);
             break;;
         case Commands::Id::SET_PAN_CUT:
+	    std::cout << "SoftcutClient handling SET_PAN_CUT" << std::endl;
             outPan[p->idx_0].setTarget((p->value/2)+0.5); // map -1,1 to 0,1
             break;
         case Commands::Id::SET_LEVEL_IN_CUT:
+	    std::cout << "SoftcutClient handling SET_LEVEL_IN_CUT" << std::endl;
             inLevel[p->idx_0][p->idx_1].setTarget(p->value);
             break;
         case Commands::Id::SET_LEVEL_CUT_CUT:
+	    std::cout << "SoftcutClient handling SET_LEVEL_CUT_CUT" << std::endl;
             fbLevel[p->idx_0][p->idx_1].setTarget(p->value);
             break;
             //-- softcut commands
         case Commands::Id::SET_CUT_RATE:
+	    std::cout << "SoftcutClient handling SET_CUT_RATE" << std::endl;
             cut.setRate(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_LOOP_START:
+	    std::cout << "SoftcutClient handling SET_CUT_LOOP_START" << std::endl;
             cut.setLoopStart(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_LOOP_END:
+	    std::cout << "SoftcutClient handling SET_CUT_LOOP_END" << std::endl;
             cut.setLoopEnd(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_LOOP_FLAG:
+	    std::cout << "SoftcutClient handling SET_CUT_LOOP_FLAG" << std::endl;
             cut.setLoopFlag(p->idx_0, p->value > 0.f);
             break;
         case Commands::Id::SET_CUT_FADE_TIME:
+	    std::cout << "SoftcutClient handling SET_CUT_FADE_TIME" << std::endl;
             cut.setFadeTime(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_REC_LEVEL:
+	    std::cout << "SoftcutClient handling SET_CUT_REC_LEVEL" << std::endl;
             cut.setRecLevel(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_LEVEL:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_LEVEL" << std::endl;
             cut.setPreLevel(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_REC_FLAG:
+	    std::cout << "SoftcutClient handling SET_CUT_REC_FLAG" << std::endl;
             cut.setRecFlag(p->idx_0, p->value > 0.f);
             break;
         case Commands::Id::SET_CUT_PLAY_FLAG:
+	    std::cout << "SoftcutClient handling SET_CUT_PLAY_FLAG" << std::endl;
             cut.setPlayFlag(p->idx_0, p->value > 0.f);
             break;
         case Commands::Id::SET_CUT_REC_OFFSET:
+	    std::cout << "SoftcutClient handling SET_CUT_REC_OFFSET" << std::endl;
             cut.setRecOffset(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POSITION:
+	    std::cout << "SoftcutClient handling SET_CUT_POSITION" << std::endl;
             cut.cutToPos(p->idx_0, p->value);
             break;
             // input filter
         case Commands::Id::SET_CUT_PRE_FILTER_FC:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_FC" << std::endl;
             cut.setPreFilterFc(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_FC_MOD:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_FC_MOD" << std::endl;
             cut.setPreFilterFcMod(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_RQ:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_RQ" << std::endl;
             cut.setPreFilterRq(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_LP:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_LP" << std::endl;
             cut.setPreFilterLp(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_HP:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_HP" << std::endl;
             cut.setPreFilterHp(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_BP:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_BP" << std::endl;
             cut.setPreFilterBp(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_BR:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_BR" << std::endl;
             cut.setPreFilterBr(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_PRE_FILTER_DRY:
+	    std::cout << "SoftcutClient handling SET_CUT_PRE_FILTER_DRY" << std::endl;
             cut.setPreFilterDry(p->idx_0, p->value);
             break;
             // output filter
         case Commands::Id::SET_CUT_POST_FILTER_FC:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_FC" << std::endl;
             cut.setPostFilterFc(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POST_FILTER_RQ:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_RQ" << std::endl;
             cut.setPostFilterRq(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POST_FILTER_LP:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_LP" << std::endl;
             cut.setPostFilterLp(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POST_FILTER_HP:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_HP" << std::endl;
             cut.setPostFilterHp(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POST_FILTER_BP:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_BP" << std::endl;
             cut.setPostFilterBp(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POST_FILTER_BR:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_BR" << std::endl;
             cut.setPostFilterBr(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POST_FILTER_DRY:
+	    std::cout << "SoftcutClient handling SET_CUT_POST_FILTER_DRY" << std::endl;
             cut.setPostFilterDry(p->idx_0, p->value);
             break;
-
         case Commands::Id::SET_CUT_LEVEL_SLEW_TIME:
+	    std::cout << "SoftcutClient handling SET_CUT_LEVEL_SLEW_TIME" << std::endl;
             outLevel[p->idx_0].setTime(p->value);
             break;
         case Commands::Id::SET_CUT_PAN_SLEW_TIME:
+	    std::cout << "SoftcutClient handling SET_CUT_PAN_SLEW_TIME" << std::endl;
             outPan[p->idx_0].setTime(p->value);
             break;
         case Commands::Id::SET_CUT_RECPRE_SLEW_TIME:
+	    std::cout << "SoftcutClient handling SET_CUT_RECPRE_SLEW_TIME" << std::endl;
             cut.setRecPreSlewTime(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_RATE_SLEW_TIME:
+	    std::cout << "SoftcutClient handling SET_CUT_RATE_SLEW_TIME" << std::endl;
             cut.setRateSlewTime(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_VOICE_SYNC:
+	    std::cout << "SoftcutClient handling SET_CUT_VOICE_SYNC" << std::endl;
             cut.syncVoice(p->idx_0, p->idx_1, p->value);
             break;
         case Commands::Id::SET_CUT_BUFFER:
+	    std::cout << "SoftcutClient handling SET_CUT_BUFFER" << std::endl;
             cut.setVoiceBuffer(p->idx_0, buf[p->idx_1], BufFrames);
             break;
         default:;;
