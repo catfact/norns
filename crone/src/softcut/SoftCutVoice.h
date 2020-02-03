@@ -104,7 +104,6 @@ namespace softcut {
         // quantized phase
         std::atomic<phase_t> quantPhase;
 
-
     private:
 
         bool playFlag;

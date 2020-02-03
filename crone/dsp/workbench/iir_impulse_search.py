@@ -74,13 +74,13 @@ def log_smoother_coeffs(tau, sr=48000):
     b0 = 1 - c
     exp_decay = compute_impulse([b0], [a1], nsamps)
 
-    plt.plot(exp_decay)
-    plt.show()
+    #plt.plot(exp_decay)
+    #plt.show()
 
     log_decay = 1 - np.flip(np.array(exp_decay))
 
-    plt.plot(log_decay)
-    plt.show()
+    #plt.plot(log_decay)
+    #plt.show()
 
     N = 3
     def err_func(coeffs):
@@ -107,7 +107,8 @@ def log_smoother_coeffs(tau, sr=48000):
 
 
 # breakpoints for time values
-t_breaks = np.logspace(-2, 1.0, 20)
+# t_breaks = np.logspace(-2, 1.0, 20)
+t_breaks = np.logspace(1, 1.5, 10)
 c = []
 
 for t in t_breaks:
