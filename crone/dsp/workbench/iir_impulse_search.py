@@ -2,18 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
 
-
 def compute_impulse(b, a, n=128):
     """
-    compute the impulse response of an Nth-order IIR filter
-    internally, a test signal is computed which is zero except for the first M samples (which are unity.)
+    compute the impulse response of an Nth-order IIR filte
+    internally we fill the history with ones, and input value is always zero.
     :param b: feedforward coefficients
     :param a: feedback coefficients (excluding a0, which is assumed to be unity)
     :param n: length of signal, in samples
     :return: list of values
     """
-    x = [0] * n
-
     P = len(b)  # feedforward order
     Q = len(a)  # feedback order
     xn = [1] * P  # feedforward history
@@ -32,7 +29,7 @@ def compute_impulse(b, a, n=128):
         # store I/O history
         for p in range(P - 1):
             xn[p + 1] = xn[p]
-        xn[0] = x[i]
+        xn[0] = 0 # input is always zero, after initial history.
         for q in range(Q - 1):
             yn[p + 1] = yn[q]
         yn[0] = y0
@@ -40,24 +37,16 @@ def compute_impulse(b, a, n=128):
     return y
 
 
-# test with a simple 1-pole lowpass smoother
-c = 0.999
-a1 = c * -1
-b0 = 1 - c
-N = 4096
-y = compute_impulse([b0], [a1], N)
-# plt.plot(y)
-# plt.show()  # looks ok
 
-# exponential decay, for comparison
-exp_decay = [None] * N
-exp_decay[0] = 1
-for i in range(N - 1):
-    exp_decay[i + 1] = exp_decay[i] * c
-
-
-# plt.plot(exp_decay)
-# plt.show()  # precisely the same
+def tau2pole(tau, sr=48000, ref=-6.9):
+    """
+    compute pole coefficient for a 1-pole lowpass smoother
+    :param tau: time constant
+    :param sr: sample rate
+    :param ref: target ratio for convergence is defined as e^ref ; default gives -60db
+    :return: coefficient
+    """
+    return np.exp(ref / (tau * sr))
 
 
 def mse(a, b):
@@ -70,41 +59,60 @@ def mse(a, b):
     """
     return np.square(np.subtract(np.array(a), np.array(b))).mean()
 
-
-err = mse(y, exp_decay)
-print("exponential decay error: {}".format(err))
-
-log_decay = 1 - np.flip(np.array(exp_decay))
-# plt.plot(log_decay)
-# plt.show()
-
-
-# ok, that's the preliminaries, let's get real.
-# we will try to fit an Nth-order filter to the log-decay impulse response curve.
-# since we normalize a0=1, number of variables is (N*2)
-# we'll try this to start
-N = 3
-
-# here's the function we'll try to minimize
-def log_decay_impulse_error(coeffs):
+def log_smoother_coeffs(tau, sr=48000):
     """
-    :param coeffs: vector of filter coefficients; N feedforward concatenated with N-1 feedback
-    :return: mean-squared error of IIR response with inverse-exponential-decay curve
+    a set of 3rd-order filter coefficients approximating log-decay impulse response,
+    given convergence time and samplerate
+    :param tau: convergence time
+    :param sr: sample rate
+    :return:
     """
+    c = tau2pole(tau, sr)
+    print("exponential decay coefficient: {}".format(c))
+    nsamps = int(tau * sr) # number of samples we'll need to capture the whole decay tail, with some padding
+    a1 = c * -1
+    b0 = 1 - c
+    exp_decay = compute_impulse([b0], [a1], nsamps)
+
+    plt.plot(exp_decay)
+    plt.show()
+
+    log_decay = 1 - np.flip(np.array(exp_decay))
+
+    plt.plot(log_decay)
+    plt.show()
+
+    N = 3
+    def err_func(coeffs):
+        b = coeffs[0:N]
+        a = coeffs[N:]
+        impulse = compute_impulse(b, a, len(log_decay))
+        return mse(impulse, log_decay)
+
+    x0 = [b0, 0, 0, a1, 0, 0]
+    print("performing search...")
+    res = minimize(err_func, np.array(x0), method='Nelder-Mead')
+    print("done")
+    print(res)
+    coeffs = res.x.tolist()
+
     b = coeffs[0:N]
     a = coeffs[N:]
-    impulse = compute_impulse(b, a, len(log_decay))
-    return mse(impulse, log_decay)
+
+    plt.plot(compute_impulse(b, a, len(log_decay)))
+    plt.show()
+    return coeffs
 
 
-# initial guess will be coefficients for exp-decay
-x0 = [b0, 0, 0, a1, 0, 0]
 
-res = minimize(log_decay_impulse_error, np.array(x0), method='Nelder-Mead')
-print(res)
-xmin = res.x.tolist()
 
-print(xmin)
-impulse = compute_impulse(xmin[0:N], xmin[N:], len(log_decay))
-plt.plot(impulse)
-plt.show()
+# breakpoints for time values
+t_breaks = np.logspace(-2, 1.0, 20)
+c = []
+
+for t in t_breaks:
+    print("computing coeffs for time {}".format(t))
+    c.append({ 'time': t,'coeffs': log_smoother_coeffs(t)})
+
+for x in c:
+    print("{} : {}".format(x['time'], x['coeffs']))
