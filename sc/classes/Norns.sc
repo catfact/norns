@@ -1,26 +1,30 @@
 // the Crone, a singleton class
 // it receives OSC from *matron* and manages the current CroneEngine
 Crone {
-	classvar <>bootOnInit = true;
+	//--- state variables
+	//--- these have getters for introspection / debug purposes
 	// the audio server
-	classvar <>server;
+	classvar <server;
 	// current CroneEngine subclass instance
-	classvar <>engine;
+	classvar <engine;
 	// available OSC functions
-	classvar <>oscfunc;
+	classvar <oscfunc;
 	// address of remote client
-	classvar <>remoteAddr;
+	classvar <remoteAddr;
 	// port for sending OSC to matron
-	classvar <>txPort = 8888;
+	classvar <txPort = 8888;
 	// server port
-	classvar <>serverPort = 57122;
-	// a CroneAudioContext
-	classvar <>context;
+	classvar <serverPort = 57122;
 	// boot completion flag
 	classvar complete = 0;
-
+	
+	//--- configuration flags
+	// if true, boot the server on initialization
+	classvar bootOnInit = true;
+	// if true, use a remote server (still on localhost)
+	// otherwise, use default (internal) server
 	classvar useRemoteServer = false;
-
+	// address of "crone" process
 	classvar <croneAddr;
 
 	*initClass {
@@ -81,23 +85,25 @@ Crone {
 		//Crone.runShellCommand("jack_connect \"crone:output_6\" \"supernova:input_2\"");
 		Crone.runShellCommand("jack_connect \"crone:output_5\" \"SuperCollider:in_1\"");
 		Crone.runShellCommand("jack_connect \"crone:output_6\" \"SuperCollider:in_2\"");
+		Crone.runShellCommand("jack_connect \"system:capture_1\" \"SuperCollider:in_1\"");
+		Crone.runShellCommand("jack_connect \"system:capture_2\" \"SuperCollider:in_2\"");
 
 		//Crone.runShellCommand("jack_connect \"supernova:output_1\" \"crone:input_5\"");
 		//Crone.runShellCommand("jack_connect \"supernova:output_2\" \"crone:input_6\"");
+		Crone.runShellCommand("jack_connect \"SuperCollider:out_1\" \"system:playback_1\"");
+		Crone.runShellCommand("jack_connect \"SuperCollider:out_2\" \"system:playback_2\"");
 		Crone.runShellCommand("jack_connect \"SuperCollider:out_1\" \"crone:input_5\"");
 		Crone.runShellCommand("jack_connect \"SuperCollider:out_2\" \"crone:input_6\"");
 
 		CroneDefs.sendDefs(server);
 		server.sync;
-		// create the audio context (boilerplate routing and analysis)
-		context = CroneAudioContext.new(server);
 
 		Crone.initOscRx;
 
 		complete = 1;
 
 		/// test..
-		{ SinOsc.ar([218,223]) * 0.125 * EnvGen.ar(Env.linen(2, 4, 6), doneAction:2) }.play(server);
+		// { SinOsc.ar([218,223]) * 0.125 * EnvGen.ar(Env.linen(2, 4, 6), doneAction:2) }.play(server);
 
 	}
 
@@ -113,7 +119,7 @@ Crone {
 					cond.wait;
 
 				});
-				class.new(context, {
+				class.new({
 					arg theEngine;
 					postln("-----------------------");
 					postln("-- crone: done loading engine, starting reports");
@@ -290,68 +296,6 @@ Crone {
 				arg msg, time, addr, recvPort;
 				this.requestPollValue(msg[1]);
 			}, '/poll/request/value'),
-
-
-			// @section AudioContext control
-
-			// @function /audio/input/level
-			// @param level in db (float: -inf..)
-			'/audio/input/level':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.inputLevel(msg[1]);
-			}, '/audio/input/level'),
-
-			// @function /audio/output/level
-			// @param level in db (float: -inf..)
-			'/audio/output/level':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.outputLevel(msg[1]);
-			}, '/audio/output/level'),
-
-			// @function /audio/monitor/level
-			// @param level (float: [0, 1])
-			'/audio/monitor/level':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.monitorLevel(msg[1]);
-			}, '/audio/monitor/level'),
-
-			// @function /audio/monitor/mono
-			'/audio/monitor/mono':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.monitorMono;
-			}, '/audio/monitor/mono'),
-
-			// @function /audio/monitor/stereo
-			'/audio/monitor/stereo':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.monitorStereo;
-			}, '/audio/monitor/stereo'),
-
-			// toggle monitoring altogether (will cause clicks)
-			// @function /audio/monitor/on
-			'/audio/monitor/on':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.monitorOn;
-			}, '/audio/monitor/on'),
-
-			// @function /audio/monitor/off
-			'/audio/monitor/off':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.monitorOff;
-			}, '/audio/monitor/off'),
-
-			// toggle pitch analysis (save CPU)
-			// @function /audio/pitch/on
-			'/audio/pitch/on':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.pitchOn;
-			}, '/audio/pitch/on'),
-
-			// @function /audio/pitch/off
-			'/audio/pitch/off':OSCFunc.new({
-				arg msg, time, addr, recvPort;
-				context.pitchOff;
-			}, '/audio/pitch/off'),
 
 			// recompile the sclang library!
 			'/recompile':OSCFunc.new({

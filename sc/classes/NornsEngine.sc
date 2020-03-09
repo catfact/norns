@@ -2,8 +2,6 @@
 // maintains some DSP processing and provides control over parameters and analysis results
 // new engines should inherit from this
 CroneEngine {
-	// an AudioContext
-	var <context;
 
 	// list of registered commands
 	var <commands;
@@ -12,24 +10,23 @@ CroneEngine {
 	// list of registered polls
 	var <pollNames;
 
-	*new { arg context, doneCallback;
-		^super.new.init(context, doneCallback);
+	*new { arg completeFunc;
+		^super.new.init(completeFunc);
 	}
 
-	init { arg argContext, doneCallback;
+	init { arg completeFunc;
 		commands = List.new;
 		commandNames = Dictionary.new;
 		pollNames = Set.new;
-		context = argContext;
-		context.postln;
 		fork {
 			this.alloc;
-			doneCallback.value(this);
+			completeFunc.value(this);
 		};
 	}
 
 	alloc {
-		// subclass responsibility to allocate server resources, this method is called in a Routine so it's okay to s.sync
+		// subclass responsibility to allocate server resources.
+		// his method is called in a Routine, so Server.sync can be used
 	}
 
 	addPoll { arg name, func, periodic=true;
@@ -40,7 +37,7 @@ CroneEngine {
 	}
 
 	// deinit is called in a routine
-	deinit { arg doneCallback;
+	deinit { arg completeFunc; 
 		postln("CroneEngine.free");
 		commands.do({ arg com;
 			com.oscdef.free;
@@ -51,7 +48,7 @@ CroneEngine {
 		// subclass responsibility to implement free
 		this.free;
 		Crone.server.sync;
-		doneCallback.value(this);
+		completeFunc.value(this);
 	}
 
 
@@ -79,11 +76,10 @@ CroneEngine {
 
 }
 
-
 // dummy engine
 Engine_None : CroneEngine {
-	*new { arg context, doneCallback;
-		^super.new(context, doneCallback);
+	*new { arg completeFunc;
+		^super.new(completeFunc);
 	}
 
 	alloc {}
