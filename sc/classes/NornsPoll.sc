@@ -1,5 +1,5 @@
 // define and execute a poll
-CronePoll {
+NornsPoll {
 	var task; // Task; timing thread
 	var <period; // Number; callback interval
 	var function; // Function; what produces the value/data
@@ -28,7 +28,7 @@ CronePoll {
 		function = argFunction;
 		periodic = argPeriodic;
 
-		oscAddr = Crone.remoteAddr;
+		oscAddr = Norns.remoteAddr;
 		
 		if(type == \value, {
 			oscPath = '/poll/value';
@@ -105,7 +105,7 @@ CronePoll {
 
 
 // singleton registry of available polls
-CronePollRegistry {
+NornsPollRegistry {
 	classvar polls;
 	classvar pollNames;
 
@@ -114,7 +114,7 @@ CronePollRegistry {
 		pollNames = Dictionary.new;
 	}
 
-	// create a CronePoll and add to the registry
+	// create a NornsPoll and add to the registry
 	*register { arg name, func, dt=0.25, type=\value, periodic=true;
 		name = name.asSymbol;
 		if(polls.keys.includes(name), {
@@ -122,7 +122,7 @@ CronePollRegistry {
 			^false;
 		}, {
 			pollNames[polls.size] = name;
-			polls[name] = CronePoll.new(polls.size, name, func, dt, type, periodic);
+			polls[name] = NornsPoll.new(polls.size, name, func, dt, type, periodic);
 			^true;
 		});
 

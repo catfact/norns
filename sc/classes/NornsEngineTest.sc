@@ -1,7 +1,7 @@
-// minimal testing tool for Crone, sends OSC back to interpreter
+// minimal testing tool for Norns, sends OSC back to interpreter
 
 
-CroneTester {
+NornsTester {
 
 	// TODO: add custom setters if we want to change these outside the class
 	classvar <host;

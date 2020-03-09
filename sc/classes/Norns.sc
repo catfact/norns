@@ -1,11 +1,11 @@
-// the Crone, a singleton class
-// it receives OSC from *matron* and manages the current CroneEngine
-Crone {
+// the Norns interface, a singleton class
+// receives OSC from *matron* and manages the current NornsEngine
+Norns {
 	//--- state variables
 	//--- these have getters for introspection / debug purposes
 	// the audio server
 	classvar <server;
-	// current CroneEngine subclass instance
+	// current NornsEngine subclass instance
 	classvar <engine;
 	// available OSC functions
 	classvar <oscfunc;
@@ -19,26 +19,20 @@ Crone {
 	classvar complete = 0;
 	
 	//--- configuration flags
-	// if true, boot the server on initialization
-	classvar bootOnInit = true;
 	// if true, use a remote server (still on localhost)
 	// otherwise, use default (internal) server
 	classvar useRemoteServer = false;
-	// address of "crone" process
-	classvar <croneAddr;
 
 	*initClass {
 		StartUp.add { // defer until after sclang init
 
-			croneAddr = NetAddr("127.0.0.1", 9999);
 
 			postln("\n-------------------------------------------------");
-			postln(" Crone startup");
+			postln(" Norns startup");
 			postln("");
 			postln(" OSC rx port: " ++ NetAddr.langPort);
 			postln(" OSC tx port: " ++ txPort);
 			postln(" server port: " ++ serverPort);
-			postln(" server port: " ++ croneAddr.port);
 			postln("--------------------------------------------------\n");
 
 			remoteAddr = NetAddr("127.0.0.1", txPort);
@@ -46,9 +40,7 @@ Crone {
 			"SC_JACK_DEFAULT_INPUTS".setenv("");
 			"SC_JACK_DEFAULT_OUTPUTS".setenv("");
 
-			if (Crone.bootOnInit) {
-				Crone.startBoot;
-			}
+			Norns.startBoot;
 		}
 	}
 
@@ -62,10 +54,10 @@ Crone {
 
 	*startBoot {
 		if(useRemoteServer, {
-			Server.default = Server.remote(\crone, NetAddr("127.0.0.1", serverPort));
+			Server.default = Server.remote(\norns, NetAddr("127.0.0.1", serverPort));
 			server = Server.default;
 			server.doWhenBooted {
-				Crone.finishBoot;
+				Norns.finishBoot;
 			};
 		}, {
 			Server.scsynth;
@@ -74,31 +66,25 @@ Crone {
 			// server.options.memSize = 2**16;
 			server.latency = 0.05;
 			server.waitForBoot {
-				Crone.finishBoot;
+				Norns.finishBoot;
 			};
 		});
 	}
 
 	*finishBoot {
-		// FIXME: connect to `crone` client instead
-		//Crone.runShellCommand("jack_connect \"crone:output_5\" \"supernova:input_1\"");
-		//Crone.runShellCommand("jack_connect \"crone:output_6\" \"supernova:input_2\"");
-		Crone.runShellCommand("jack_connect \"crone:output_5\" \"SuperCollider:in_1\"");
-		Crone.runShellCommand("jack_connect \"crone:output_6\" \"SuperCollider:in_2\"");
-		Crone.runShellCommand("jack_connect \"system:capture_1\" \"SuperCollider:in_1\"");
-		Crone.runShellCommand("jack_connect \"system:capture_2\" \"SuperCollider:in_2\"");
+		Norns.runShellCommand("jack_connect \"crone:output_5\" \"SuperCollider:in_1\"");
+		Norns.runShellCommand("jack_connect \"crone:output_6\" \"SuperCollider:in_2\"");
 
-		//Crone.runShellCommand("jack_connect \"supernova:output_1\" \"crone:input_5\"");
-		//Crone.runShellCommand("jack_connect \"supernova:output_2\" \"crone:input_6\"");
-		Crone.runShellCommand("jack_connect \"SuperCollider:out_1\" \"system:playback_1\"");
-		Crone.runShellCommand("jack_connect \"SuperCollider:out_2\" \"system:playback_2\"");
-		Crone.runShellCommand("jack_connect \"SuperCollider:out_1\" \"crone:input_5\"");
-		Crone.runShellCommand("jack_connect \"SuperCollider:out_2\" \"crone:input_6\"");
+		Norns.runShellCommand("jack_connect \"SuperCollider:out_1\" \"system:playback_1\"");
+		Norns.runShellCommand("jack_connect \"SuperCollider:out_2\" \"system:playback_2\"");
 
-		CroneDefs.sendDefs(server);
-		server.sync;
+		// for off-norns development, probably want to connect to system I/O ports
+		// Norns.runShellCommand("jack_connect \"system:capture_1\" \"SuperCollider:in_1\"");
+		// Norns.runShellCommand("jack_connect \"system:capture_2\" \"SuperCollider:in_2\"");
+		// Norns.runShellCommand("jack_connect \"SuperCollider:out_1\" \"crone:input_5\"");
+		// Norns.runShellCommand("jack_connect \"SuperCollider:out_2\" \"crone:input_6\"");
 
-		Crone.initOscRx;
+		Norns.initOscRx;
 
 		complete = 1;
 
@@ -109,7 +95,7 @@ Crone {
 
 	*setEngine { arg name;
 		var class;
-		class = CroneEngine.allSubclasses.detect({ arg n; n.asString == name.asString });
+		class = NornsEngine.allSubclasses.detect({ arg n; n.asString == name.asString });
 		if(class.notNil, {
 			fork {
 				if(engine.notNil, {
@@ -122,7 +108,7 @@ Crone {
 				class.new({
 					arg theEngine;
 					postln("-----------------------");
-					postln("-- crone: done loading engine, starting reports");
+					postln("-- norns: done loading engine, starting reports");
 					postln("--------");
 
 					this.engine = theEngine;
@@ -141,7 +127,7 @@ Crone {
 
 	// start a thread to continuously send a named report with a given interval
 	*startPoll { arg idx;
-		var poll = CronePollRegistry.getPollFromIndex(idx);
+		var poll = NornsPollRegistry.getPollFromIndex(idx);
 		if(poll.notNil, {
 			poll.start;
 		}, {
@@ -150,7 +136,7 @@ Crone {
 	}
 
 	*stopPoll { arg idx;
-		var poll = CronePollRegistry.getPollFromIndex(idx);
+		var poll = NornsPollRegistry.getPollFromIndex(idx);
 		if(poll.notNil, {
 			poll.stop;
 		}, {
@@ -159,7 +145,7 @@ Crone {
 	}
 
 	*setPollTime { arg idx, dt;
-		var pt = CronePollRegistry.getPollFromIndex(idx);
+		var pt = NornsPollRegistry.getPollFromIndex(idx);
 		if(pt.notNil, {
 			pt.setTime(dt);
 		}, {
@@ -169,14 +155,14 @@ Crone {
 
 
 	*requestPollValue { arg idx;
-		var poll = CronePollRegistry.getPollFromIndex(idx);
+		var poll = NornsPollRegistry.getPollFromIndex(idx);
 		if(poll.notNil, {
 			poll.requestValue;
 		});
 	}
 
 	*reportEngines {
-		var names = CroneEngine.allSubclasses.select {
+		var names = NornsEngine.allSubclasses.select {
 			|class| class.name.asString.beginsWith("Engine_");
 		}.collect({ arg n;
 			n.asString.split($_).drop(1).join($_)
@@ -201,10 +187,10 @@ Crone {
 	}
 
 	*reportPolls {
-		var num = CronePollRegistry.getNumPolls;
+		var num = NornsPollRegistry.getNumPolls;
 		remoteAddr.sendMsg('/report/polls/start', num);
 		num.do({ arg i;
-			var poll = CronePollRegistry.getPollFromIndex(i);
+			var poll = NornsPollRegistry.getPollFromIndex(i);
 			postln(poll.name);
 			// FIXME: polls should just have format system like commands?
 			remoteAddr.sendMsg('/report/polls/entry', i, poll.name, if(poll.type == \value, {0}, {1}));
@@ -219,7 +205,7 @@ Crone {
 			// @module crone
 			// @alias crone
 
-			/// send a `/crone/ready` response if Crone is done starting up,
+			/// send a `/crone/ready` response if Norns is done starting up,
 			/// otherwise send nothing
 			// @function /ready
 			'/ready':OSCFunc.new({

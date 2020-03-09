@@ -1,7 +1,7 @@
 // an audio "engine."
 // maintains some DSP processing and provides control over parameters and analysis results
 // new engines should inherit from this
-CroneEngine {
+NornsEngine {
 
 	// list of registered commands
 	var <commands;
@@ -31,23 +31,23 @@ CroneEngine {
 
 	addPoll { arg name, func, periodic=true;
 		name = name.asSymbol;
-		CronePollRegistry.register(name, func, periodic:periodic);
+		NornsPollRegistry.register(name, func, periodic:periodic);
 		pollNames.add(name);
-		^CronePollRegistry.getPollFromName(name);
+		^NornsPollRegistry.getPollFromName(name);
 	}
 
 	// deinit is called in a routine
 	deinit { arg completeFunc; 
-		postln("CroneEngine.free");
+		postln("NornsEngine.free");
 		commands.do({ arg com;
 			com.oscdef.free;
 		});
 		pollNames.do({ arg name;
-			CronePollRegistry.remove(name);
+			NornsPollRegistry.remove(name);
 		});
 		// subclass responsibility to implement free
 		this.free;
-		Crone.server.sync;
+		Norns.server.sync;
 		completeFunc.value(this);
 	}
 
@@ -55,7 +55,7 @@ CroneEngine {
 	addCommand { arg name, format, func;
 		var idx, cmd;
 		name = name.asSymbol;
-		postln([ "CroneEngine adding command", name, format, func ]);
+		postln([ "NornsEngine adding command", name, format, func ]);
 		if(commandNames[name].isNil, {
 			idx = commandNames.size;
 			commandNames[name] = idx;
@@ -64,7 +64,7 @@ CroneEngine {
 			cmd.format = format;
 			cmd.oscdef = OSCdef(name.asSymbol, {
 				arg msg, time, addr, rxport;
-				// ["CroneEngine rx command", msg, time, addr, rxport].postln;
+				// ["NornsEngine rx command", msg, time, addr, rxport].postln;
 				func.value(msg);
 			}, ("/command/"++name).asSymbol);
 			commands.add(cmd);
@@ -77,7 +77,7 @@ CroneEngine {
 }
 
 // dummy engine
-Engine_None : CroneEngine {
+Engine_None : NornsEngine {
 	*new { arg completeFunc;
 		^super.new(completeFunc);
 	}
