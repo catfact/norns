@@ -1,4 +1,4 @@
-CroneGenEngine : CroneEngine {
+NornsGenEngine : NornsEngine {
 	classvar <>debug = true;
 	classvar defaultPolyphony = 6;
 	var mainGroup;
@@ -10,11 +10,11 @@ CroneGenEngine : CroneEngine {
 	var savedArgs;
 	var polyphony;
 
-	*new { |context, callback|
-		^super.new(context, callback).initCroneGenEngine;
+	*new { |callback|
+		^super.new(callback).initNornsGenEngine;
 	}
 
-	initCroneGenEngine {
+	initNornsGenEngine {
 		metadata = this.class.parseMetadata;
 
         if (metadata[\inControlName].isNil and: metadata[\outControlName].isNil) {
@@ -50,8 +50,8 @@ CroneGenEngine : CroneEngine {
 		};
 */
 		var controlsToExposeAsCommands = metadata[\controlsToExposeAsCommands];
-
-		mainGroup = Group.tail(context.xg);
+		var server = Norns.server;
+		mainGroup = Group.tail(server);
 		voiceGroup = ParGroup.tail(mainGroup);
 		controlBusses = IdentityDictionary.new;
 
@@ -69,10 +69,10 @@ CroneGenEngine : CroneEngine {
 		switch (type)
 			{\persistent} {
 				// 1:1. one synth is spawned until engine is changed
-				// context.server.sync;
+				// server.sync;
 
-				// synths = [ Synth(synthDef.name, args: args, target: context.xg) ];
-				// context.server.sync;
+				// synths = [ Synth(synthDef.name, args: args, target: server) ];
+				// server.sync;
 				this.addCommand(
 					"run",
 					"i",
@@ -82,7 +82,7 @@ CroneGenEngine : CroneEngine {
 			{\polyphonicReuseSynths} {
 				// a synth having a gate argument is considered polyphonic, but synths cannot free themselves hence [polyphony] number of synths are spawned and reused (this is good for deterministic engine performance characteristics)
 				// args = args.addAll([\gate, 0]);
-				// context.server.sync;
+				// server.sync;
 				this.addCommand(
 					"gate",
 					"ii",
@@ -165,7 +165,7 @@ CroneGenEngine : CroneEngine {
 							noteOnArgs = [\amp, \midivelocity.asSpec.unmap(velocity)].addAll(noteOnArgs); // TODO: fix amp curve
 						};
 						this.class.trace(\noteOnArgs, noteOnArgs);
-						context.server.makeBundle(nil, {
+						server.makeBundle(nil, {
 							synths[midinote] !? _.release;
 							synths[midinote] = Synth(
 								this.class.synthDesc.name,
@@ -243,7 +243,7 @@ CroneGenEngine : CroneEngine {
 			);
 		};
 
-		context.server.sync;
+		server.sync;
 
 		specs = this.class.synthDesc.metadata !? { |metadata| metadata.specs } ? ();
 
@@ -251,7 +251,7 @@ CroneGenEngine : CroneEngine {
 
 		this.class.trace(\argsComplete, args);
 
-		context.server.sync; // TODO: don't think this is needed, test
+		server.sync; // TODO: don't think this is needed, test
 
 		switch (type)
 		{\persistent} {
@@ -269,8 +269,9 @@ CroneGenEngine : CroneEngine {
 			this.polyphonicReuseSynthsRespawnSynths(polyphony = defaultPolyphony);
 		};
 
-		context.server.sync;
+		server.sync;
 	}
+
 
     autorouteInputs { |controlName, args|
 		^if (controlName.notNil) { args.addAll([controlName, context.in_b]) } { args }
@@ -356,11 +357,11 @@ CroneGenEngine : CroneEngine {
 	}
 
 /*
-	(make CroneGenEngine a subclass of CroneEngine)
+	(make NornsGenEngine a subclass of NornsEngine)
 
-	*new { |context, callback| ^super.new(context, callback).initCroneGenEngine }
+	*new { |context, callback| ^super.new(context, callback).initNornsGenEngine }
 
-	initCroneGenEngine {
+	initNornsGenEngine {
 		var synthDef, synthDesc;
 		synthDef = this.synthDef;
 
@@ -370,13 +371,13 @@ CroneGenEngine : CroneEngine {
 		synthDef.add;
 		synthDesc=SynthDescLib.global[synthDef.name];
 
-		CroneSynthDefIntrospectionEngine.new(context, synthDesc);
-		^super.new.initCroneGenEngine(context);
+		NornsSynthDefIntrospectionEngine.new(context, synthDesc);
+		^super.new.initNornsGenEngine(context);
 	}
 */
 
 	*parseMetadata {
-		^CroneSynthDefIntrospectionUtil.inspectSynthDesc(this.synthDesc);
+		^NornsSynthDefIntrospectionUtil.inspectSynthDesc(this.synthDesc);
 	}
 
 	*synthDesc {
@@ -394,7 +395,7 @@ CroneGenEngine : CroneEngine {
 	*synthDef {
         ^if (this.ugenGraphFunc.notNil) {
             var synthDef = this.wrapOut(
-				// TODO: effectively filter out synthdefs from automatic lookup in Crone?
+				// TODO: effectively filter out synthdefs from automatic lookup in Norns?
                 ("No_" ++ this.name.asString).asSymbol, // TODO: assumes class name has Engine_ prefix (this could be validated)
                 this.ugenGraphFunc,
                 this.rates, // TODO: remove this, assume all rates kr
@@ -478,7 +479,7 @@ CroneGenEngine : CroneEngine {
 	}
 }
 
-CroneSynthDefIntrospectionUtil {
+NornsSynthDefIntrospectionUtil {
 	*inspectSynthDesc { |synthDesc|
 		var type = (case
 			{ synthDesc.hasControlNamed(\gate) and: synthDesc.canFreeSynth.not } {
