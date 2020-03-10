@@ -79,11 +79,13 @@ Norns {
 		Norns.runShellCommand("jack_connect \"SuperCollider:out_2\" \"system:playback_2\"");
 
 		// for off-norns development, probably want to connect to system I/O ports
-		// Norns.runShellCommand("jack_connect \"system:capture_1\" \"SuperCollider:in_1\"");
-		// Norns.runShellCommand("jack_connect \"system:capture_2\" \"SuperCollider:in_2\"");
-		// Norns.runShellCommand("jack_connect \"SuperCollider:out_1\" \"crone:input_5\"");
-		// Norns.runShellCommand("jack_connect \"SuperCollider:out_2\" \"crone:input_6\"");
-
+		/*
+		Norns.runShellCommand("jack_connect \"system:capture_1\" \"SuperCollider:in_1\"");
+		Norns.runShellCommand("jack_connect \"system:capture_2\" \"SuperCollider:in_2\"");
+		Norns.runShellCommand("jack_connect \"SuperCollider:out_1\" \"crone:input_5\"");
+		Norns.runShellCommand("jack_connect \"SuperCollider:out_2\" \"crone:input_6\"");
+		*/
+		
 		Norns.initOscRx;
 
 		complete = 1;
@@ -93,7 +95,7 @@ Norns {
 
 	}
 
-	*setEngine { arg name;
+	*loadEngineClass { arg name;
 		var class;
 		class = NornsEngine.allSubclasses.detect({ arg n; n.asString == name.asString });
 		if(class.notNil, {
@@ -125,6 +127,10 @@ Norns {
 		});
 	}
 
+	*loadEngineScript { arg path;
+		// TODO..
+	}
+
 	// start a thread to continuously send a named report with a given interval
 	*startPoll { arg idx;
 		var poll = NornsPollRegistry.getPollFromIndex(idx);
@@ -152,7 +158,6 @@ Norns {
 			postln("setPollTime failed; couldn't find index " ++ idx);
 		});
 	}
-
 
 	*requestPollValue { arg idx;
 		var poll = NornsPollRegistry.getPollFromIndex(idx);
@@ -207,7 +212,6 @@ Norns {
 
 			/// send a `/crone/ready` response if Norns is done starting up,
 			/// otherwise send nothing
-			// @function /ready
 			'/ready':OSCFunc.new({
 				arg msg, time, addr, recvPort;
 				if(complete==1) {
@@ -219,46 +223,50 @@ Norns {
 			// @section report management
 
 			/// begin OSC engine report sequence
-			// @function /report/engines
 			'/report/engines':OSCFunc.new({
 				arg msg, time, addr, recvPort;
 				this.reportEngines;
 			}, '/report/engines'),
 
 			/// begin OSC command report sequence
-			// @function /report/commands
 			'/report/commands':OSCFunc.new({
 				arg msg, time, addr, recvPort;
 				this.reportCommands;
 			}, '/report/commands'),
 
 			/// begin OSC poll report sequence
-			// @function /report/polls
 			'/report/polls':OSCFunc.new({
 				arg msg, time, addr, recvPort;
 				this.reportPolls;
 			}, '/report/polls'),
 
-			// @function /engine/free
+			// free the current engine
 			'/engine/free':OSCFunc.new({
 				if(engine.notNil, { engine.deinit; });
 			}, '/engine/free'),
 
-			// @function /engine/load/name
+			// load an engine by class name
 			// @param engine name (string)
 			'/engine/load/name':OSCFunc.new({
 				arg msg, time, addr, recvPort;
-				this.setEngine('Engine_' ++ msg[1]);
+				this.loadEngineClass('Engine_' ++ msg[1]);
 			}, '/engine/load/name'),
+			
+			// load an engine by running a script
+			// @param script file  (full path)
+			'/engine/load/script':OSCFunc.new({
+				arg msg, time, addr, recvPort;
+				this.loadEngineScript(msg[1]);
+			}, '/engine/load/script'),
 
-			// @function /poll/start
+
+			// start a poll
 			// @param poll index (integer)
 			'/poll/start':OSCFunc.new({
 				arg msg, time, addr, recvPort;
 				this.startPoll(msg[1]);
 			}, '/poll/start'),
 
-			// @function /poll/stop
 			// @param poll index (integer)
 			'/poll/stop':OSCFunc.new({
 				arg msg, time, addr, recvPort;
@@ -266,7 +274,6 @@ Norns {
 			}, '/poll/stop'),
 
 			/// set the period of a poll
-			// @function /poll/time
 			// @param poll index (integer)
 			// @param poll period(float)
 			'/poll/time':OSCFunc.new({
@@ -276,7 +283,6 @@ Norns {
 
 
 			/// set the period of a poll
-			// @function /poll/request/value
 			// @param poll index (integer)
 			'/poll/request/value':OSCFunc.new({
 				arg msg, time, addr, recvPort;

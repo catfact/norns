@@ -26,7 +26,12 @@ NornsEngine {
 
 	alloc {
 		// subclass responsibility to allocate server resources.
-		// his method is called in a Routine, so Server.sync can be used
+		// this method is called in a Routine, so Server.sync can be used
+	}
+
+	free {
+		// subclass responsibility to de-allocate server resources.
+		// this method is called in a Routine, so Server.sync can be used
 	}
 
 	addPoll { arg name, func, periodic=true;
@@ -37,7 +42,8 @@ NornsEngine {
 	}
 
 	// deinit is called in a routine
-	deinit { arg completeFunc; 
+	deinit {
+		arg completeFunc; 
 		postln("NornsEngine.free");
 		commands.do({ arg com;
 			com.oscdef.free;

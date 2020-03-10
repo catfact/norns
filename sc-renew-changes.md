@@ -25,27 +25,32 @@ the one thing we lose is the builtin pitch-reporting poll, since freq-domain ana
 #### Engine changes required
 
 - rename `Crone` -> `Norns`.
-- superclass `alloc { context, callback } ` has changed to `alloc { callback }`.
-- don't use fields from `context`:
+- `alloc { context, callback }` has changed to `alloc { callback }`.
+- fields from `context` need replacing:
   - `context.server` can be replaced with `Norns.server` (or even `Server.default`? hm..)
-  - context I/O busses can be replaced with the default "hardware" I/O busess (`Out.ar([0,1])` for output, `SoundIn.ar([0,1])` for input.
-  - instead of targeting `context.xg` (the "processing group") on Synth/Node creation, just target the server.
+	- instead of targeting `context.xg` (the "processing group") on Synth/Node creation, just target the server.
+  - context I/O busses can be replaced with the default "hardware" I/O busess:
+    - for output, `Out.ar([0,1])`
+	- for input `SoundIn.ar([0,1])`, or compute the correct bus offsets for `In.ar` (see `Bus` helpfile)
+
 
 # new features
 
-fortunatey there are some non-breaking changes too, mostly aimed at reducing Engine boilerplate and offering new methods of creating Engines from runtime-interpreted sclang code instead of compiled classes.
+there are also some non-breaking changes here, mostly aimed at reducing Engine boilerplate and offering new methods of creating Engines from runtime-interpreted sclang code instead of compiled classes.
 
 the removal of norns-specific cruft will also 
 
-## new helper methods for class-based engines
+## helper methods for class-based engines
 
-it is a good pattern for a subclass of `NornsEngine` to be a simple interface wrapper class around a "kernel" class which does all the real work. adding norns "commands" to the engine logic creates a lot of repetetive boilerplate no matter where it is located.
+it is a good pattern for a subclass of `NornsEngine` to be a simple interface wrapper class around a "kernel" class which does all the real work. this keeps the main functionality intependent from the norns ecosystem and more easily developed and tested on other systems.
+
+but adding norns "commands" to the engine logic tends to create a lot of repetetive boilerplate, no matter where it is located.
 
 if the "kernel"/"interface" structure is used, then we can generate command mappings automatically by inspecting the kernel class methods. 
 
-a kernel method of the form `set_foo { arg value... }` shall be mapped to an engine command called `foo`, with format `f`, which calls `set_foo { msg[1] }`.
+a kernel method of the form `set_foo { arg value... }` shall be mapped to an engine command called `foo`, with format `"f"`, which calls `set_foo { msg[1] }`.
 
-for polyphonic or paraphonic engines, a kernel method of the form `voice_bar { arg index, value... }` shall be mapped to an engine command called `bar`, with format `if`, which calls `voice_bar { msg[1], msg[2] }`.
+for polyphonic or paraphonic engines, a kernel method of the form `voice_bar { arg index, value... }` shall be mapped to an engine command called `bar`, with format `"if"`, which calls `voice_bar { msg[1], msg[2] }`.
 
 ## new "dynamic" engine creation methods (not requiring classes)
 
