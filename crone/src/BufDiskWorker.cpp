@@ -103,11 +103,6 @@ void BufDiskWorker::workLoop() {
                     writeBufferStereo(job.path, bufs[job.bufIdx[0]], bufs[job.bufIdx[1]], job.startSrc, job.dur);
                     break;
             }
-#if 0 // debug, timing
-            auto ms_now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-            auto ms_dur = ms_now - ms_start;
-            std::cout << "job finished; elapsed time = " << ms_dur << " ms" << std::endl;
-#endif
 
         } else {
             qMut.unlock();
@@ -179,8 +174,8 @@ noexcept {
     auto *ioBuf = new float[numSrcChan * ioBufFrames];
     size_t numBlocks = frDur / ioBufFrames;
     size_t rem = frDur - (numBlocks * ioBufFrames);
-    std::cout << "file contains " << file.frames() << " frames" << std::endl;
-    std::cout << "reading " << numBlocks << " blocks and " << rem << " remainder frames..." << std::endl;
+    //std::cout << "file contains " << file.frames() << " frames" << std::endl;
+    //std::cout << "reading " << numBlocks << " blocks and " << rem << " remainder frames..." << std::endl;
     for (size_t block = 0; block < numBlocks; ++block) {
         int res = file.seek(frSrc, SF_SEEK_SET);
         if (res == -1) {

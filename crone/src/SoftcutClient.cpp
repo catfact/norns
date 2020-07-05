@@ -71,8 +71,9 @@ void crone::SoftcutClient::mixOutput(size_t numFrames) {
 }
 
 void crone::SoftcutClient::handleCommand(Commands::CommandPacket *p) {
+    // std::cout << "handleCommand " << (int)p->id << " " << p->idx_0 << " " << p->idx_1 << " " << p->value << std::endl;
     switch (p->id) {
-        //-- softcut routing
+        //-- softcut routingidx_0
     case Commands::Id::SET_ENABLED_CUT:
 	enabled[p->idx_0] = p->value > 0.f;
 	break;
