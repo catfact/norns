@@ -40,9 +40,6 @@ typedef enum {
 } screen_event_id_t;
 
 //----------------
-struct se_void {
-};
-
 struct se_int {
     int i1;
 };
@@ -69,12 +66,19 @@ struct se_buf_doubles {
     double d4;
 };
 
+struct se_buf_ints {
+    size_t nb;
+    int i1;
+    int i2;
+    int i3;
+    int i4;
+};
 union screen_event_payload {
-    struct se_void v;
     struct se_int i;
     struct se_doubles d;
     struct se_buf b;
     struct se_buf_doubles bd;
+    struct se_buf_ints bi;
 };
 
 struct screen_event_data {
@@ -82,6 +86,5 @@ struct screen_event_data {
     void *buf;
     union screen_event_payload payload;
 };
-
 
 #endif
