@@ -95,7 +95,7 @@ void* screen_event_loop(void* x) {
     screen_event_data_init(&ev);
     while(1) {
         pthread_mutex_lock(&screen_q_lock);
-        while (screen_q_rd == screen_q_wr) { 
+        while (screen_q_rd == screen_q_wr) {
             pthread_cond_wait(&screen_q_nonempty, &screen_q_lock);
         }
         assert (screen_q_rd != screen_q_wr);
@@ -311,7 +311,10 @@ void handle_screen_event(struct screen_event_data *ev) {
     case SCREEN_EVENT_SET_OPERATOR:
 	screen_set_operator(ev->payload.i.i1);
 	break;
-    case SCREEN_EVENT_POKE:
+    case SCREEN_EVENT_POKE:	
+#if DEBUG_SCREEN_EVENTS
+	assert(ev->payload.bi.nb == ev->payload.bi.i3 * ev->payload.bi.i4);
+#endif
 	screen_poke(ev->payload.bi.i1, ev->payload.bi.i2,
 		    ev->payload.bi.i3, ev->payload.bi.i4,
 		    ev->buf);
