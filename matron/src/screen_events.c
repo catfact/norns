@@ -28,6 +28,32 @@ static pthread_t screen_event_thread;
 static pthread_mutex_t screen_q_lock;
 static pthread_cond_t screen_q_nonempty;
 
+// clear out the Q, then populate it with a visible white flash
+// call with the Q locked
+void screen_events_emergency_clear() {
+    struct screen_event_data *ev;
+    for (int i=0; i<SCREEN_Q_SIZE; ++i) {
+	ev = &screen_q[i];
+	screen_event_data_free(ev);
+    }
+    screen_q[0].type = SCREEN_EVENT_CLEAR;		
+    screen_q[1].type = SCREEN_EVENT_LEVEL;
+    screen_q[1].payload.i.i1 = 15;
+    screen_q[2].type = SCREEN_EVENT_RECT;
+    screen_q[2].payload.d.d1 = 1;
+    screen_q[2].payload.d.d2 = 1;
+    screen_q[2].payload.d.d3 = 62;
+    screen_q[2].payload.d.d4 = 126;
+    screen_q[3].type = SCREEN_EVENT_UPDATE;
+    screen_q[4].type = SCREEN_EVENT_UPDATE;
+    screen_q[5].type = SCREEN_EVENT_UPDATE;
+    screen_q[6].type = SCREEN_EVENT_UPDATE;
+    screen_q[7].type = SCREEN_EVENT_UPDATE;
+    
+    screen_q_wr = 8;
+    screen_q_rd = 0;
+}
+
 void screen_events_init() { 
     pthread_cond_init(&screen_q_nonempty, NULL);
     // set up screen event loop
@@ -66,10 +92,7 @@ void screen_event_data_push(struct screen_event_data *src) {
     // if these indices become equal, we've filled the queue
     if(screen_q_wr == screen_q_rd) {
         // TODO: post some kind of error to lua?
-        // TODO: clear pending events and post SCREEN_CLEAR
-	// for now, just drop the oldest
-        screen_event_data_free(&screen_q[screen_q_rd]);
-        screen_q_rd = (screen_q_rd + 1) & SCREEN_Q_MASK;
+	screen_events_emergency_clear();
     }
     pthread_cond_signal(&screen_q_nonempty);
     pthread_mutex_unlock(&screen_q_lock);
