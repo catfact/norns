@@ -8,7 +8,7 @@
 #include "screen_events_pr.h"
 #include "screen.h"
 
-#define DEBUG_SCREEN_EVENTS 1
+#define DEBUG_SCREEN_EVENTS 0
 
 #define SCREEN_Q_SIZE 1024
 #define SCREEN_Q_MASK (SCREEN_Q_SIZE -1)
@@ -56,9 +56,7 @@ void screen_event_data_free(struct screen_event_data *ev) {
 static void screen_event_data_move(struct screen_event_data *dst,
 				   struct screen_event_data *src) {
     assert(dst->buf == NULL && dst->type == SCREEN_EVENT_NONE);
-    dst->type = src->type;
-    dst->buf = src->buf;
-    dst->payload = src->payload;
+    *dst = *src;
     screen_event_data_init(src);
 }
 
