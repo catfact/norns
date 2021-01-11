@@ -17,18 +17,12 @@ static int screen_q_rd = 0;
 
 static void* screen_event_loop(void*);
 
-// move/copy screen event data to current write position in Q
 static void screen_event_data_push(struct screen_event_data *src);
-// move/copy screen event data from current read position in Q
 static void screen_event_data_pop(struct screen_event_data *dst);
-// initialize an empty event data structure
 static void screen_event_data_init(struct screen_event_data *ev);
-// free allocated buffer associated with event data
 static void screen_event_data_free(struct screen_event_data *dst);
-// move from `src` event to `dst` event; does not perform buffer copy or allocation
 static void screen_event_data_move(struct screen_event_data *dst, struct screen_event_data *src);
-// take appropriate action for given event data
-static void handle_screen_event(const struct screen_event_data *data);
+static void handle_screen_event(struct screen_event_data *data);
 
 static pthread_t screen_event_thread;
 static pthread_mutex_t screen_q_lock;
@@ -42,12 +36,28 @@ void screen_events_init() {
     }
 }
 
-
 void screen_event_data_init(struct screen_event_data *ev) {
     ev->type = SCREEN_EVENT_NONE;
     ev->buf = NULL;
 }
 
+void screen_event_data_free(struct screen_event_data *ev) {
+    if (ev->buf != NULL) { 
+        free(ev->buf);
+    }
+    screen_event_data_init(ev);
+}
+
+static void screen_event_data_move(struct screen_event_data *dst,
+			      struct screen_event_data *src) {
+    assert(dst->buf == NULL && dst->type == SCREEN_EVENT_NONE);
+    dst->type = src->type;
+    dst->buf = src->buf;
+    dst->payload = src->payload;
+    screen_event_data_init(src);
+}
+
+// call from any thread; locks the Q
 void screen_event_data_push(struct screen_event_data *src) {
     pthread_mutex_lock(&screen_q_lock);
     struct screen_event_data* dst = &(screen_q[screen_q_wr]);
@@ -57,12 +67,15 @@ void screen_event_data_push(struct screen_event_data *src) {
     if(screen_q_wr == screen_q_rd) {
         // TODO: post some kind of error to lua?
         // TODO: clear pending events and post SCREEN_CLEAR
+	// for now, just drop the oldest
+        screen_event_data_free(&screen_q[screen_q_rd]);
+        screen_q_rd = (screen_q_rd + 1) & SCREEN_Q_MASK;
     }
     pthread_cond_signal(&screen_q_nonempty);
     pthread_mutex_unlock(&screen_q_lock);
 }
 
-// call with q locked
+// call with Q locked from screen handler thread
 void screen_event_data_pop(struct screen_event_data *dst) {
     struct screen_event_data *src = &screen_q[screen_q_rd];
     screen_event_data_move(dst, src);
@@ -71,40 +84,23 @@ void screen_event_data_pop(struct screen_event_data *dst) {
 
 void* screen_event_loop(void* x) { 
     (void)x;
-    struct screen_event_data event_data;
-    event_data.buf = NULL;
-    event_data.type = SCREEN_EVENT_NONE;
+    struct screen_event_data ev;
+    screen_event_data_init(&ev);
+    ev.buf = NULL;
+    ev.type = SCREEN_EVENT_NONE;
     while(1) {
         pthread_mutex_lock(&screen_q_lock);
         while (screen_q_rd == screen_q_wr) { 
             pthread_cond_wait(&screen_q_nonempty, &screen_q_lock);
         }
         assert (screen_q_rd != screen_q_wr);
-        screen_event_data_pop(&event_data);
+        screen_event_data_pop(&ev);
         pthread_mutex_unlock(&screen_q_lock);
-        handle_screen_event(&event_data);
-        screen_event_data_free(&event_data);
+        handle_screen_event(&ev);
     }
 }
 
-void screen_event_data_free(struct screen_event_data *ev) {
-    if (ev->buf != NULL) { 
-        free(ev->buf);
-        ev->buf = NULL;
-    }
-    ev->type = SCREEN_EVENT_NONE;
-}
-
-
-static void screen_event_data_move(struct screen_event_data *dst,
-			      struct screen_event_data *src) {
-    assert(dst->buf == NULL && dst->type == SCREEN_EVENT_NONE);
-    dst->type = src->type;
-    dst->buf = src->buf;
-    dst->payload = src->payload;
-}
-
-void handle_screen_event(const struct screen_event_data *ev) {
+void handle_screen_event(struct screen_event_data *ev) {
     assert(ev->type != SCREEN_EVENT_NONE);
     switch(ev->type) {
     case SCREEN_EVENT_UPDATE:
@@ -199,11 +195,12 @@ void handle_screen_event(const struct screen_event_data *ev) {
 	screen_translate(ev->payload.d.d1, ev->payload.d.d2);
 	break;
     case SCREEN_EVENT_SET_OPERATOR:
-	screen_set_operator(ev->payload.d.d1);
+	screen_set_operator(ev->payload.i.i1);
 	break;
     default:
 	;;
-    }
+    }    
+    screen_event_data_free(ev);
 }
 
 
