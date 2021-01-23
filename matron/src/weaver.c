@@ -106,9 +106,10 @@ static int _screen_rect(lua_State *l);
 static int _screen_stroke(lua_State *l);
 static int _screen_fill(lua_State *l);
 static int _screen_text(lua_State *l);
+static int _screen_text_right(lua_State *l);
+static int _screen_text_center(lua_State *l);
 static int _screen_clear(lua_State *l);
 static int _screen_close(lua_State *l);
-static int _screen_text_extents(lua_State *l);
 static int _screen_export_png(lua_State *l);
 static int _screen_display_png(lua_State *l);
 static int _screen_peek(lua_State *l);
@@ -381,7 +382,8 @@ void w_init(void) {
     lua_register_norns("screen_text", &_screen_text);
     lua_register_norns("screen_clear", &_screen_clear);
     lua_register_norns("screen_close", &_screen_close);
-    lua_register_norns("screen_text_extents", &_screen_text_extents);
+    lua_register_norns("screen_text_right", &_screen_text_right);
+    lua_register_norns("screen_text_center", &_screen_text_center);
     lua_register_norns("screen_export_png", &_screen_export_png);
     lua_register_norns("screen_display_png", &_screen_display_png);
     lua_register_norns("screen_peek", &_screen_peek);
@@ -848,6 +850,15 @@ int _screen_close(lua_State *l) {
 }
 
 /***
+ * screen: right-justified text
+ */
+int _screen_text_right(lua_State *l) {
+}
+
+int _screen_text_center(lua_State *l) {
+}
+
+/***
  * screen: text_extents
  * @function s_text_extents
  * @tparam gets x/y displacement of a string
@@ -909,12 +920,7 @@ int _screen_peek(lua_State *l) {
      && (y >= 0) && (y <= 63)
      && (w > 0)
      && (h > 0)) {
-        char* buf = screen_peek(x, y, &w, &h);
-        if (buf) {
-            lua_pushlstring(l, buf, w * h);
-            free(buf);
-            return 1;
-        }
+        screen_peek(x, y, &w, &h);
     } 
     return 0;
 }
@@ -2082,6 +2088,33 @@ void w_handle_system_cmd(char *capture) {
     lua_pushstring(lvm, capture);
     l_report(lvm, l_docall(lvm, 1, 0));
 }
+
+
+void w_handle_screen_result_text_extents(struct event_screen_result_text_extents* ev) {
+}
+
+void w_handle_screen_result_current_point(struct event_screen_result_current_point* ev) {
+}
+
+void w_handle_screen_result_peek(struct event_screen_result_peek* ev) {
+}
+
+/* // screen results callback */
+/* void w_handle_screen_results(struct event_screen_results *results) {     */
+/*     lua_getglobal(lvm, "_norns"); */
+/*     switch (results->type) { */
+/*     case SCREEN_RESULTS_PEEK: */
+/* 	lua_getfield(lvm, "screen_results_peek"); */
+/* 	lua_remove(lvm, -2); */
+/* 	if (results->buf) { */
+/*             lua_pushlstring(l, buf, w * h); */
+/* 	    // NB: buffer is freed by event loop */
+/*         } */
+
+/*     } */
+/*     l_report(l_docall(lvm, 1, 0)); */
+/* } */
+
 
 // helper: set poll given by lua to given state
 static int poll_set_state(lua_State *l, bool val) {

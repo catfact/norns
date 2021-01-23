@@ -1,7 +1,7 @@
 /*
  * screen.c
  *
- * oled
+ * cairo drawing (and a little ioctl)
  */
 
 #include <assert.h>
@@ -19,6 +19,9 @@
 #include <unistd.h>
 
 #include "args.h"
+#include "events.h"
+#include "event_types.h"
+#include "screen.h"
 
 #define NUM_FONTS 67
 #define NUM_OPS 29
@@ -78,7 +81,7 @@ static cairo_font_face_t *ct[NUM_FONTS];
 static FT_Library value;
 static FT_Error status;
 static FT_Face face[NUM_FONTS];
-static double text_xy[2];
+//static double text_xy[2];
 
 typedef struct _cairo_linuxfb_device {
     int fb_fd;
@@ -305,22 +308,27 @@ void screen_clear(void) {
     UNLOCK_CR
 }
 
-double *screen_text_extents(const char *s) {
-    LOCK_CR
+void screen_text_extents(const char *s) {
     cairo_text_extents_t extents;
-    cairo_text_extents(cr, s, &extents);
-    text_xy[0] = extents.width;
-    text_xy[1] = extents.height;
+    LOCK_CR
+    cairo_text_extents(cr, s, &extents);    
     UNLOCK_CR
-    return text_xy;
+    union event_data *ev = event_data_new(EVENT_SCREEN_RESULT_TEXT_EXTENTS);    
+    ev->screen_result_text_extents.x_bearing = extents.x_bearing;
+    ev->screen_result_text_extents.y_bearing = extents.y_bearing;
+    ev->screen_result_text_extents.width = extents.width;
+    ev->screen_result_text_extents.height = extents.height;
+    ev->screen_result_text_extents.x_advance = extents.x_advance;
+    ev->screen_result_text_extents.y_advance = extents.y_advance;
+    event_post(ev);
 }
 
-char *screen_peek(int x, int y, int *w, int *h) {
-    *w = (*w <= (128 - x)) ? (*w) : (128 - x);
-    *h = (*h <= (64 - y))  ? (*h) : (64 - y);
-    char *buf = malloc(*w * *h);
+void screen_peek(int x, int y, int w, int h) {
+    w = (w <= (128 - x)) ? w : (128 - x);
+    h = (h <= (64 - y))  ? h : (64 - y);
+    char *buf = malloc(w * h);
     if (!buf) {
-        return NULL;
+        return;
     }
     // NB: peek/poke do not actually access the CR,
     // but we do want to avoid torn values
@@ -329,17 +337,21 @@ char *screen_peek(int x, int y, int *w, int *h) {
     uint32_t *data = (uint32_t *)cairo_image_surface_get_data(surface);
     if (!data) {
         UNLOCK_CR
-        return NULL;
+	return;
     }
     char *p = buf;
-    for (int j = y; j < y + *h; j++) {
-        for (int i = x; i < x + *w; i++) {
+    for (int j = y; j < y + h; j++) {
+        for (int i = x; i < x + w; i++) {
             *p = data[j * 128 + i] & 0xF;
             p++;
         }
     }
     UNLOCK_CR
-    return buf;
+    union event_data *ev = event_data_new(EVENT_SCREEN_RESULT_PEEK);
+    ev->screen_result_peek.w = w;
+    ev->screen_result_peek.h = h;    
+    ev->screen_result_peek.buf = buf;
+    event_post(ev);
 }
 
 void screen_poke(int x, int y, int w, int h, unsigned char *buf) {
@@ -409,10 +421,13 @@ void screen_display_png(const char *filename, double x, double y) {
     cairo_surface_destroy(image);
 }
 
-extern void screen_export_png(const char *s) {
+void screen_export_png(const char *s) {
     cairo_surface_write_to_png(surface, s);
 }
 
+void screen_current_position() {
+    // TODO
+}
 
 //-------------------------------------------------------
 //-- static function definitions
@@ -490,79 +505,78 @@ handle_allocate_error:
         return;
     }
 
-    strcpy(font_path[0], "04B_03__.TTF");
-    strcpy(font_path[1], "liquid.ttf");
-    strcpy(font_path[2], "Roboto-Thin.ttf");
-    strcpy(font_path[3], "Roboto-Light.ttf");
-    strcpy(font_path[4], "Roboto-Regular.ttf");
-    strcpy(font_path[5], "Roboto-Medium.ttf");
-    strcpy(font_path[6], "Roboto-Bold.ttf");
-    strcpy(font_path[7], "Roboto-Black.ttf");
-    strcpy(font_path[8], "Roboto-ThinItalic.ttf");
-    strcpy(font_path[9], "Roboto-LightItalic.ttf");
-    strcpy(font_path[10], "Roboto-Italic.ttf");
-    strcpy(font_path[11], "Roboto-MediumItalic.ttf");
-    strcpy(font_path[12], "Roboto-BoldItalic.ttf");
-    strcpy(font_path[13], "Roboto-BlackItalic.ttf");
-    strcpy(font_path[14], "VeraBd.ttf");
-    strcpy(font_path[15], "VeraBI.ttf");
-    strcpy(font_path[16], "VeraIt.ttf");
-    strcpy(font_path[17], "VeraMoBd.ttf");
-    strcpy(font_path[18], "VeraMoBI.ttf");
-    strcpy(font_path[19], "VeraMoIt.ttf");
-    strcpy(font_path[20], "VeraMono.ttf");
-    strcpy(font_path[21], "VeraSeBd.ttf");
-    strcpy(font_path[22], "VeraSe.ttf");
-    strcpy(font_path[23], "Vera.ttf");
+    int font_idx = 0;
+    strcpy(font_path[font_idx++], "04B_03__.TTF");
+    strcpy(font_path[font_idx++], "liquid.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Thin.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Light.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Regular.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Medium.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Bold.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Black.ttf");
+    strcpy(font_path[font_idx++], "Roboto-ThinItalic.ttf");
+    strcpy(font_path[font_idx++], "Roboto-LightItalic.ttf");
+    strcpy(font_path[font_idx++], "Roboto-Italic.ttf");
+    strcpy(font_path[font_idx++], "Roboto-MediumItalic.ttf");
+    strcpy(font_path[font_idx++], "Roboto-BoldItalic.ttf");
+    strcpy(font_path[font_idx++], "Roboto-BlackItalic.ttf");
+    strcpy(font_path[font_idx++], "VeraBd.ttf");
+    strcpy(font_path[font_idx++], "VeraBI.ttf");
+    strcpy(font_path[font_idx++], "VeraIt.ttf");
+    strcpy(font_path[font_idx++], "VeraMoBd.ttf");
+    strcpy(font_path[font_idx++], "VeraMoBI.ttf");
+    strcpy(font_path[font_idx++], "VeraMoIt.ttf");
+    strcpy(font_path[font_idx++], "VeraMono.ttf");
+    strcpy(font_path[font_idx++], "VeraSeBd.ttf");
+    strcpy(font_path[font_idx++], "VeraSe.ttf");
+    strcpy(font_path[font_idx++], "Vera.ttf");
     //------------------
     // bitmap fonts
-    strcpy(font_path[24], "bmp/tom-thumb.bdf");
-    // FIXME: this is totally silly...
-    int i = 25;
-    strcpy(font_path[i++], "bmp/creep.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-10b.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-10r.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-13b.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-13b-i.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-13r.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-13r-i.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-16b.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-16b-i.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-16r.bdf");
-    strcpy(font_path[i++], "bmp/ctrld-fixed-16r-i.bdf");
-    strcpy(font_path[i++], "bmp/scientifica-11.bdf");
-    strcpy(font_path[i++], "bmp/scientificaBold-11.bdf");
-    strcpy(font_path[i++], "bmp/scientificaItalic-11.bdf");
-    strcpy(font_path[i++], "bmp/ter-u12b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u12n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u14b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u14n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u14v.bdf");
-    strcpy(font_path[i++], "bmp/ter-u16b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u16n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u16v.bdf");
-    strcpy(font_path[i++], "bmp/ter-u18b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u18n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u20b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u20n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u22b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u22n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u24b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u24n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u28b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u28n.bdf");
-    strcpy(font_path[i++], "bmp/ter-u32b.bdf");
-    strcpy(font_path[i++], "bmp/ter-u32n.bdf");
-    strcpy(font_path[i++], "bmp/unscii-16-full.pcf");
-    strcpy(font_path[i++], "bmp/unscii-16.pcf");
-    strcpy(font_path[i++], "bmp/unscii-8-alt.pcf");
-    strcpy(font_path[i++], "bmp/unscii-8-fantasy.pcf");
-    strcpy(font_path[i++], "bmp/unscii-8-mcr.pcf");
-    strcpy(font_path[i++], "bmp/unscii-8.pcf");
-    strcpy(font_path[i++], "bmp/unscii-8-tall.pcf");
-    strcpy(font_path[i++], "bmp/unscii-8-thin.pcf");
+    strcpy(font_path[font_idx++], "bmp/tom-thumb.bdf");
+    strcpy(font_path[font_idx++], "bmp/creep.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-10b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-10r.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-13b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-13b-i.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-13r.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-13r-i.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-16b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-16b-i.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-16r.bdf");
+    strcpy(font_path[font_idx++], "bmp/ctrld-fixed-16r-i.bdf");
+    strcpy(font_path[font_idx++], "bmp/scientifica-11.bdf");
+    strcpy(font_path[font_idx++], "bmp/scientificaBold-11.bdf");
+    strcpy(font_path[font_idx++], "bmp/scientificaItalic-11.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u12b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u12n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u14b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u14n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u14v.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u16b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u16n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u16v.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u18b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u18n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u20b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u20n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u22b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u22n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u24b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u24n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u28b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u28n.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u32b.bdf");
+    strcpy(font_path[font_idx++], "bmp/ter-u32n.bdf");
+    strcpy(font_path[font_idx++], "bmp/unscii-16-full.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-16.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-8-alt.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-8-fantasy.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-8-mcr.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-8.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-8-tall.pcf");
+    strcpy(font_path[font_idx++], "bmp/unscii-8-thin.pcf");
 
-    assert(i == NUM_FONTS);
+    assert(font_idx == NUM_FONTS);
 
     fprintf(stderr, "fonts: \n");
     for (int i = 0; i < NUM_FONTS; ++i) {
