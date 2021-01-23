@@ -853,9 +853,13 @@ int _screen_close(lua_State *l) {
  * screen: right-justified text
  */
 int _screen_text_right(lua_State *l) {
+    // TODO
+    return 0;
 }
 
 int _screen_text_center(lua_State *l) {
+    // TODO
+    return 0;
 }
 
 /***
@@ -866,10 +870,13 @@ int _screen_text_center(lua_State *l) {
 int _screen_text_extents(lua_State *l) {
     lua_check_num_args(1);
     const char *s = luaL_checkstring(l, 1);
-    double *xy = screen_text_extents(s);
-    lua_pushinteger(l, xy[0]);
-    lua_pushinteger(l, xy[1]);
-    return 2;
+    screen_text_extents(s);
+    // FIXME
+    //    (void)s;
+    //    double *xy = screen_text_extents(s);    
+    /* lua_pushinteger(l, xy[0]); */
+    /* lua_pushinteger(l, xy[1]); */
+    return 0;
 }
 
 /***
@@ -920,7 +927,7 @@ int _screen_peek(lua_State *l) {
      && (y >= 0) && (y <= 63)
      && (w > 0)
      && (h > 0)) {
-        screen_peek(x, y, &w, &h);
+        screen_peek(x, y, w, h);
     } 
     return 0;
 }
