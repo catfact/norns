@@ -122,10 +122,10 @@ _norns.screen.text_extents = function(x_bear, y_bear, w, h, x_adv, y_adv)
    print("handling screen.text_extents results: ")
    print("x bearing: "..x_bear)
    print("y bearing: "..y_bear)
-   print(" width: "..w)
-   print("x height: "..h)
+   print("width: "..w)
+   print("height: "..h)
    print("x advance: "..x_adv)
-   print("y advance: ".y_adv)
+   print("y advance: "..y_adv)
 end
 
 _norns.screen.current_point = function(x, y)

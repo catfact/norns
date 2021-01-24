@@ -108,6 +108,7 @@ static int _screen_fill(lua_State *l);
 static int _screen_text(lua_State *l);
 static int _screen_text_right(lua_State *l);
 static int _screen_text_center(lua_State *l);
+static int _screen_text_extents(lua_State *l);
 static int _screen_clear(lua_State *l);
 static int _screen_close(lua_State *l);
 static int _screen_export_png(lua_State *l);
@@ -379,10 +380,14 @@ void w_init(void) {
     lua_register_norns("screen_stroke", &_screen_stroke);
     lua_register_norns("screen_fill", &_screen_fill);
     lua_register_norns("screen_text", &_screen_text);
-    lua_register_norns("screen_clear", &_screen_clear);
-    lua_register_norns("screen_close", &_screen_close);
     lua_register_norns("screen_text_right", &_screen_text_right);
     lua_register_norns("screen_text_center", &_screen_text_center);
+    lua_register_norns("screen_text_extents", &_screen_text_extents);
+    
+    
+    lua_register_norns("screen_clear", &_screen_clear);
+    lua_register_norns("screen_close", &_screen_close);
+    
     lua_register_norns("screen_export_png", &_screen_export_png);
     lua_register_norns("screen_display_png", &_screen_display_png);
     lua_register_norns("screen_peek", &_screen_peek);
