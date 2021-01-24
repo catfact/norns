@@ -118,6 +118,8 @@ static int _screen_poke(lua_State *l);
 static int _screen_rotate(lua_State *l);
 static int _screen_translate(lua_State *l);
 static int _screen_set_operator(lua_State *l);
+static int _screen_current_point(lua_State *l);
+
 // i2c
 static int _gain_hp(lua_State *l);
 // osc
@@ -395,7 +397,8 @@ void w_init(void) {
     lua_register_norns("screen_rotate", &_screen_rotate);
     lua_register_norns("screen_translate", &_screen_translate);
     lua_register_norns("screen_set_operator", &_screen_set_operator);
-
+    lua_register_norns("screen_current_point", &_screen_current_point);
+    
     // analog output control
     lua_register_norns("gain_hp", &_gain_hp);
 
@@ -874,7 +877,7 @@ int _screen_text_center(lua_State *l) {
 int _screen_text_extents(lua_State *l) {
     lua_check_num_args(1);
     const char *s = luaL_checkstring(l, 1);
-    screen_text_extents(s);
+    screen_event_text_extents(s);
     return 0;
 }
 
@@ -926,7 +929,7 @@ int _screen_peek(lua_State *l) {
      && (y >= 0) && (y <= 63)
      && (w > 0)
      && (h > 0)) {
-        screen_peek(x, y, w, h);
+        screen_event_peek(x, y, w, h);
     } 
     return 0;
 }
@@ -1002,6 +1005,16 @@ int _screen_set_operator(lua_State *l) {
     if (i < 0) { i = 0; }
     if (i > 28){ i = 28;}
     screen_event_set_operator(i);
+    lua_settop(l, 0);
+    return 0;
+}
+
+
+/***
+ * screen: request current draw point
+ */
+int _screen_current_point(lua_State *l) {
+    screen_event_current_point();
     lua_settop(l, 0);
     return 0;
 }

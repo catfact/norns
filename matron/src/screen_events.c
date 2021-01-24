@@ -174,6 +174,9 @@ static void print_event_type(struct screen_event_data *ev) {
     case SCREEN_EVENT_TEXT:
 	fprintf(stderr, "SCREEN_EVENT_TEXT\n");
 	break;
+    case SCREEN_EVENT_TEXT_EXTENTS:
+	fprintf(stderr, "SCREEN_EVENT_TEXT_EXTENTS\n");
+	break;
     case SCREEN_EVENT_CLEAR:
 	fprintf(stderr, "SCREEN_EVENT_CLEAR\n");
 	break;
@@ -195,8 +198,14 @@ static void print_event_type(struct screen_event_data *ev) {
     case SCREEN_EVENT_SET_OPERATOR:
 	fprintf(stderr, "SCREEN_EVENT_SET_OPERATOR\n");
 	break;
+    case SCREEN_EVENT_PEEK:
+	fprintf(stderr, "SCREEN_EVENT_PEEK\n");
+	break;
     case SCREEN_EVENT_POKE:
 	fprintf(stderr, "SCREEN_EVENT_POKE\n");
+	break;
+    case SCREEN_EVENT_CURRENT_POINT:
+	fprintf(stderr, "SCREEN_EVENT_CURRENT_POINT\n");
 	break;
     }
 }
@@ -284,6 +293,9 @@ void handle_screen_event(struct screen_event_data *ev) {
 #endif
 	screen_text(ev->buf);
 	break;
+    case SCREEN_EVENT_TEXT_EXTENTS:
+	screen_text_extents(ev->buf);
+	break;
     case SCREEN_EVENT_CLEAR:
 	screen_clear();
 	break;
@@ -318,6 +330,10 @@ void handle_screen_event(struct screen_event_data *ev) {
 	screen_poke(ev->payload.bi.i1, ev->payload.bi.i2,
 		    ev->payload.bi.i3, ev->payload.bi.i4,
 		    ev->buf);
+	break;
+    case SCREEN_EVENT_CURRENT_POINT:
+	screen_current_point();
+	break;
     default:
 	;;
     }    
@@ -531,6 +547,15 @@ void screen_event_text(const char *s) {
     screen_event_data_push(&ev);
 }
 
+void screen_event_text_extents(const char *s) {
+    struct screen_event_data ev;
+    screen_event_data_init(&ev);
+    ev.type = SCREEN_EVENT_TEXT_EXTENTS;
+    screen_event_copy_string(&ev, s);
+    screen_event_data_push(&ev);
+}
+
+
 void screen_event_clear(void) {
     struct screen_event_data ev;
     screen_event_data_init(&ev);
@@ -560,6 +585,17 @@ void screen_event_display_png(const char *s, double x, double y) {
     screen_event_copy_string(&ev, s);
     ev.payload.bd.d1 = x;
     ev.payload.bd.d2 = y;
+    screen_event_data_push(&ev);
+}
+
+void screen_event_peek(int x, int y, int w, int h) {
+    struct screen_event_data ev;
+    screen_event_data_init(&ev);
+    ev.type = SCREEN_EVENT_PEEK;
+    ev.payload.bi.i1 = x;
+    ev.payload.bi.i2 = y;
+    ev.payload.bi.i3 = w;
+    ev.payload.bi.i4 = h;
     screen_event_data_push(&ev);
 }
 
@@ -600,6 +636,13 @@ void screen_event_set_operator(int i) {
     screen_event_data_init(&ev);
     ev.type = SCREEN_EVENT_SET_OPERATOR;
     ev.payload.i.i1 = i;
+    screen_event_data_push(&ev);
+}
+
+void screen_event_current_point() {
+    struct screen_event_data ev;
+    screen_event_data_init(&ev);
+    ev.type = SCREEN_EVENT_CURRENT_POINT;
     screen_event_data_push(&ev);
 }
 

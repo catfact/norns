@@ -26,9 +26,14 @@
 #define NUM_FONTS 67
 #define NUM_OPS 29
 
-#if 1 
+#define USE_LOCK 0
+
+#if USE_LOCK
 #define LOCK_CR pthread_mutex_lock(&cr_lock);
 #define UNLOCK_CR pthread_mutex_unlock(&cr_lock);
+#else
+#define LOCK_CR ;;
+#define UNLOCK_CR ;;
 #endif
 
 static char font_path[NUM_FONTS][32];
@@ -74,7 +79,10 @@ static cairo_surface_t *surfacefb;
 static cairo_surface_t *image;
 
 static cairo_t *cr;
+
+#if USE_LOCK
 static pthread_mutex_t cr_lock;
+#endif
 
 static cairo_t *crfb;
 static cairo_font_face_t *ct[NUM_FONTS];

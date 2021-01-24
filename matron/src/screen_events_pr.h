@@ -28,6 +28,7 @@ typedef enum {
 	      SCREEN_EVENT_STROKE,
 	      SCREEN_EVENT_FILL,
 	      SCREEN_EVENT_TEXT,
+	      SCREEN_EVENT_TEXT_EXTENTS,
 	      SCREEN_EVENT_CLEAR,
 	      SCREEN_EVENT_CLOSE_PATH,
 	      SCREEN_EVENT_EXPORT_PNG,
@@ -36,7 +37,9 @@ typedef enum {
 	      SCREEN_EVENT_TRANSLATE,
 	      SCREEN_EVENT_SET_OPERATOR,
 	      SCREEN_EVENT_PEEK,
-	      SCREEN_EVENT_POKE
+	      SCREEN_EVENT_POKE,
+	      SCREEN_EVENT_CURRENT_POINT
+	      
 } screen_event_id_t;
 
 //----------------

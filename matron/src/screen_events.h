@@ -27,16 +27,15 @@ extern void screen_event_fill(void);
 extern void screen_event_text(const char *s);
 extern void screen_event_clear(void);
 extern void screen_event_close_path(void);
-// FIXME: needs callback
-//extern double *screen_text_extents(const char *s);
+extern void screen_event_text_extents(const char *s);
 extern void screen_event_export_png(const char *s);
 extern void screen_event_display_png(const char *filename, double x, double y);
-// FIXME: needs callback
-//extern char *screen_peek(int x, int y, int *w, int *h);
+extern void screen_event_peek(int x, int y, int w, int h);
 extern void screen_event_poke(int x, int y, int w, int h, unsigned char *buf);
 extern void screen_event_rotate(double r);
 extern void screen_event_translate(double x, double y);
 extern void screen_event_set_operator(int i);
+extern void screen_event_current_point();
 
 
 #endif
