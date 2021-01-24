@@ -2,12 +2,6 @@
 
 #include <stdint.h>
 
-typedef enum {
-	      SCREEN_RESULT_TEXT_EXTENTS,
-	      SCREEN_RESULT_CURRENT_POINT,
-	      SCREEN_RESULT_PEEK
-} screen_results_t;
-
 extern void screen_init(void);
 extern void screen_deinit(void);
 

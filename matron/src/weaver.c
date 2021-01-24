@@ -871,11 +871,6 @@ int _screen_text_extents(lua_State *l) {
     lua_check_num_args(1);
     const char *s = luaL_checkstring(l, 1);
     screen_text_extents(s);
-    // FIXME
-    //    (void)s;
-    //    double *xy = screen_text_extents(s);    
-    /* lua_pushinteger(l, xy[0]); */
-    /* lua_pushinteger(l, xy[1]); */
     return 0;
 }
 
