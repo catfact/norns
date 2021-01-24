@@ -226,7 +226,6 @@ Screen.pixel = function(x, y)
   _norns.screen_rect(x, y, 1, 1)
 end
 
-
 _norns.screen_text_right = function(str)
   local x, y = _norns.screen_text_extents(str)
   _norns.screen_move_rel(-x, 0)

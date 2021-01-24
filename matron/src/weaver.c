@@ -248,9 +248,8 @@ static int _clock_get_tempo(lua_State *l);
 // platform detection (CM3 vs PI3 vs OTHER)
 static int _platform(lua_State *l);
 
-// boilerplate: push a function to the stack, from field in global 'norns'
+// boilerplate: push a function to the stack, from field in global '_norns'
 static inline void _push_norns_func(const char *field, const char *func) {
-    // fprintf(stderr, "calling norns.%s.%s\n", field, func);
     lua_getglobal(lvm, "_norns");
     lua_getfield(lvm, -1, field);
     lua_remove(lvm, -2);
@@ -2093,30 +2092,30 @@ void w_handle_system_cmd(char *capture) {
 
 
 void w_handle_screen_result_text_extents(struct event_screen_result_text_extents* ev) {
+    _push_norns_func("screen", "text_extents");    
+    lua_pushnumber(lvm, ev->x_bearing);
+    lua_pushnumber(lvm, ev->y_bearing);
+    lua_pushnumber(lvm, ev->width);
+    lua_pushnumber(lvm, ev->height);
+    lua_pushnumber(lvm, ev->x_advance);
+    lua_pushnumber(lvm, ev->y_advance);
+    l_report(lvm, l_docall(lvm, 6, 0)); 
 }
 
 void w_handle_screen_result_current_point(struct event_screen_result_current_point* ev) {
+    _push_norns_func("screen", "current_point");    
+    lua_pushnumber(lvm, ev->x);
+    lua_pushnumber(lvm, ev->y);
+    l_report(lvm, l_docall(lvm, 2, 0)); 
 }
 
-void w_handle_screen_result_peek(struct event_screen_result_peek* ev) {
+void w_handle_screen_result_peek(struct event_screen_result_peek* ev) {    
+    _push_norns_func("screen", "peek");
+    lua_pushinteger(lvm, ev->w);
+    lua_pushinteger(lvm, ev->h);
+    lua_pushstring(lvm, ev->buf);
+    l_report(lvm, l_docall(lvm, 3, 0)); 
 }
-
-/* // screen results callback */
-/* void w_handle_screen_results(struct event_screen_results *results) {     */
-/*     lua_getglobal(lvm, "_norns"); */
-/*     switch (results->type) { */
-/*     case SCREEN_RESULTS_PEEK: */
-/* 	lua_getfield(lvm, "screen_results_peek"); */
-/* 	lua_remove(lvm, -2); */
-/* 	if (results->buf) { */
-/*             lua_pushlstring(l, buf, w * h); */
-/* 	    // NB: buffer is freed by event loop */
-/*         } */
-
-/*     } */
-/*     l_report(l_docall(lvm, 1, 0)); */
-/* } */
-
 
 // helper: set poll given by lua to given state
 static int poll_set_state(lua_State *l, bool val) {
@@ -2137,7 +2136,7 @@ int _stop_poll(lua_State *l) {
 
 int _set_poll_time(lua_State *l) {
     lua_check_num_args(2);
-    int idx = (int)luaL_checkinteger(l, 1) - 1; // convert from 1-based
+     int idx = (int)luaL_checkinteger(l, 1) - 1; // convert from 1-based
     float val = (float)luaL_checknumber(l, 2);
     o_set_poll_time(idx, val);
     lua_settop(l, 0);

@@ -300,6 +300,25 @@ void screen_text(const char *s) {
     UNLOCK_CR
 }
 
+
+void screen_text_right(const char *s) {    
+    cairo_text_extents_t extents;    
+    LOCK_CR
+    cairo_text_extents(cr, s, &extents);
+    cairo_rel_move_to(cr, -extents.width, 0);
+    cairo_show_text(cr, s);
+    UNLOCK_CR
+}
+
+void screen_text_center(const char *s) {
+    cairo_text_extents_t extents;    
+    LOCK_CR
+    cairo_text_extents(cr, s, &extents);
+    cairo_rel_move_to(cr, -extents.width * 0.5, 0);
+    cairo_show_text(cr, s);
+    UNLOCK_CR
+}
+
 void screen_clear(void) {
     LOCK_CR
     cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
@@ -357,7 +376,6 @@ void screen_peek(int x, int y, int w, int h) {
 void screen_poke(int x, int y, int w, int h, unsigned char *buf) {
     w = (w <= (128 - x)) ? w : (128 - x);
     h = (h <= (64 - y))  ? h : (64 - y);
-
     // NB: peek/poke do not actually access the CR,
     // but we do want to avoid torn values
     LOCK_CR
@@ -425,8 +443,15 @@ void screen_export_png(const char *s) {
     cairo_surface_write_to_png(surface, s);
 }
 
-void screen_current_position() {
-    // TODO
+void screen_current_point() {
+    double x, y;
+    LOCK_CR;
+    cairo_get_current_point (cr, &x, &y);
+    UNLOCK_CR;    
+    union event_data *ev = event_data_new(EVENT_SCREEN_RESULT_CURRENT_POINT);
+    ev->screen_result_current_point.x = x;
+    ev->screen_result_current_point.y = y;
+    event_post(ev);
 }
 
 //-------------------------------------------------------
