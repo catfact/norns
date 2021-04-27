@@ -41,7 +41,7 @@ struct watch {
 
 // watchers
 // FIXME: these names / paths are really arbitrary.
-static struct watch w[DEV_TYPE_COUNT_PHYSICAL] = {
+static struct watch watches[DEV_TYPE_COUNT_PHYSICAL] = {
     {.sub_name = "tty", .node_pattern = "/dev/ttyUSB*"},
     {.sub_name = "input", .node_pattern = "/dev/input/event*"},
     {.sub_name = "sound", .node_pattern = "/dev/snd/midiC*D*"},
@@ -72,24 +72,24 @@ void dev_monitor_init(void) {
     assert(udev);
 
     for (int i = 0; i < DEV_TYPE_COUNT_PHYSICAL; i++) {
-        w[i].mon = udev_monitor_new_from_netlink(udev, "udev");
-        if (w[i].mon == NULL) {
-            fprintf(stderr, "failed to start udev_monitor for subsystem %s, pattern %s\n", w[i].sub_name,
-                    w[i].node_pattern);
+        watches[i].mon = udev_monitor_new_from_netlink(udev, "udev");
+        if (watches[i].mon == NULL) {
+            fprintf(stderr, "failed to start udev_monitor for subsystem %s, pattern %s\n", watches[i].sub_name,
+                    watches[i].node_pattern);
             continue;
         }
-        if (udev_monitor_filter_add_match_subsystem_devtype(w[i].mon, w[i].sub_name, NULL) < 0) {
-            fprintf(stderr, "failed to add udev monitor filter for subsystem %s, pattern %s\n", w[i].sub_name,
-                    w[i].node_pattern);
+        if (udev_monitor_filter_add_match_subsystem_devtype(watches[i].mon, watches[i].sub_name, NULL) < 0) {
+            fprintf(stderr, "failed to add udev monitor filter for subsystem %s, pattern %s\n", watches[i].sub_name,
+                    watches[i].node_pattern);
             continue;
         }
-        if (udev_monitor_enable_receiving(w[i].mon) < 0) {
-            fprintf(stderr, "failed to enable monitor receiving for for subsystem %s, pattern %s\n", w[i].sub_name,
-                    w[i].node_pattern);
+        if (udev_monitor_enable_receiving(watches[i].mon) < 0) {
+            fprintf(stderr, "failed to enable monitor receiving for for subsystem %s, pattern %s\n", watches[i].sub_name,
+                    watches[i].node_pattern);
             continue;
         }
 
-        pfds[i].fd = udev_monitor_get_fd(w[i].mon);
+        pfds[i].fd = udev_monitor_get_fd(watches[i].mon);
         pfds[i].events = POLLIN;
     } // end dev type loop
 
@@ -107,7 +107,7 @@ void dev_monitor_init(void) {
 void dev_monitor_deinit(void) {
     pthread_cancel(watch_tid);
     for (int i = 0; i < DEV_TYPE_COUNT_PHYSICAL; i++) {
-        free(w[i].mon);
+        free(watches[i].mon);
     }
 }
 
@@ -126,7 +126,7 @@ int dev_monitor_scan(void) {
         struct udev_list_entry *devices, *dev_list_entry;
 
         ue = udev_enumerate_new(udev);
-        udev_enumerate_add_match_subsystem(ue, w[i].sub_name);
+        udev_enumerate_add_match_subsystem(ue, watches[i].sub_name);
         udev_enumerate_scan_devices(ue);
 
         devices = udev_enumerate_get_list_entry(ue);
@@ -172,7 +172,7 @@ void *watch_loop(void *p) {
         // see which monitor has data
         for (int i = 0; i < DEV_TYPE_COUNT_PHYSICAL; i++) {
             if (pfds[i].revents & POLLIN) {
-                dev = udev_monitor_receive_device(w[i].mon);
+                dev = udev_monitor_receive_device(watches[i].mon);
                 if (dev) {
                     handle_device(dev);
                     udev_device_unref(dev);
@@ -237,7 +237,7 @@ device_t check_dev_type(struct udev_device *dev) {
         // eventually we might want to use this same system for GPIO, &c...
         if (udev_device_get_parent_with_subsystem_devtype(dev, "usb", NULL)) {
             for (int i = 0; i < DEV_TYPE_COUNT_PHYSICAL; i++) {
-                const char *node_pattern = w[i].node_pattern;
+                const char *node_pattern = watches[i].node_pattern;
                 if (node_pattern[0] && fnmatch(node_pattern, node, 0) == 0) {
                     t = i;
                     break;
