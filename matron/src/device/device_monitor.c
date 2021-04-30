@@ -27,6 +27,13 @@
 #define NODE_NAME_SIZE 128
 #define WATCH_TIMEOUT_MS 100
 
+static enum {
+    DEV_CLASS_TTY,
+    DEV_CLASS_ACM,
+    DEV_CLASS_HID,
+    DEV_CLASS_MIDI
+};
+
 struct watch {
     // subsystem name to use as a filter on udev_monitor
     const char sub_name[NODE_NAME_SIZE];
@@ -57,7 +64,11 @@ pthread_t watch_tid;
 static void *watch_loop(void *data);
 static void handle_device(struct udev_device *dev);
 static device_t check_dev_type(struct udev_device *dev);
+// try to get MIDI device name from ALSA
+// returns a newly-allocated string (may be NULL)
 static const char *get_alsa_midi_node(struct udev_device *dev);
+// try to get product name from udev_device or its parents
+// returns a newly-allocated string (may be NULL)
 static const char *get_device_name(struct udev_device *dev);
 
 //--------------------------------
@@ -276,7 +287,6 @@ const char *get_alsa_midi_node(struct udev_device *dev) {
     return result;
 }
 
-// try to get product name from udev_device or its parents
 const char *get_device_name(struct udev_device *dev) {
     char *current_name = NULL;
     struct udev_device *current_dev = dev;
