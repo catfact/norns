@@ -16,7 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/stat.h>
+//#include <sys/stat.h>
 
 #include "device.h"
 #include "device_hid.h"
@@ -162,28 +162,32 @@ int dev_monitor_scan(void) {
     for (int fidx=0; fidx < DEV_FILE_COUNT; ++fidx) {
 	struct udev_enumerate *ue;
         struct udev_list_entry *devices, *dev_list_entry;
-	struct stat statbuf;
+	//	struct stat statbuf;
 	
 	ue = udev_enumerate_new(udev);		
 	udev_enumerate_add_match_subsystem(ue, dev_file_name[fidx]);
 	udev_enumerate_scan_devices(ue);
-	        devices = udev_enumerate_get_list_entry(ue);
+	devices = udev_enumerate_get_list_entry(ue);
 
         udev_list_entry_foreach(dev_list_entry, devices) {
             const char *path;
 
-            path = udev_list_entry_get_name(dev_list_entry);
-	    
+            path = udev_list_entry_get_name(dev_list_entry);	    
+            dev = udev_device_new_from_syspath(udev, path);
+
+	    /*
 	    if (stat(path, &statbuf) < 0 || !S_ISCHR(statbuf.st_mode)) {
 		fprintf(stderr, "dev_monitor_scan error: couldn't stat %s\n", path);
-
-		return 0;
+		udev_enumerate_unref(ue);
+		continue;
 	    }
-
-            dev = udev_device_new_from_devnum(udev, 'c', statbuf.st_rdev);
+	    dev = udev_device_new_from_devnum(udev, 'c', statbuf.st_rdev);
+	    */
 
             if (dev != NULL) {
-		add_dev(dev, fidx);
+		if (udev_device_get_parent_with_subsystem_devtype(dev, "usb", NULL)) {
+		    add_dev(dev, fidx);
+		}
             }
 	    udev_device_unref(dev);
         }
@@ -310,7 +314,6 @@ int rm_dev(struct udev_device *dev, int dev_file) {
      dev_list_add(DEV_TYPE_MONOME, node, get_device_name(dev));
      return;
      }
-
      
 #ifdef DEVICE_MONITOR_DEBUG
      fprintf(stderr, "assuming this tty is a crow\n");
@@ -490,16 +493,29 @@ const char *get_device_name(struct udev_device *dev) {
 }
 
  int is_dev_monome_grid(struct udev_device *dev) {
-	const char *vendor, *model;
+     const char *vendor, *model;
 
-	vendor = udev_device_get_property_value(dev, "ID_VENDOR");
-	model = udev_device_get_property_value(dev, "ID_MODEL");
+     vendor = udev_device_get_property_value(dev, "ID_VENDOR");
+     model = udev_device_get_property_value(dev, "ID_MODEL");
 
-	printf("vendor: %s; model: %s\n\n", vendor, model);
+     printf("vendor: %s; model: %s\n\n", vendor, model);
 	
-	if (vendor != NULL && model != NULL) { 
-	    return (strcmp(vendor,"monome")==0) && (strcmp(model,"grid")==0);
-	} else {
-	    return 0;
-	}
+     if (vendor == NULL || model == NULL) {
+	 return 0;
+     }
+
+     if (strcmp(vendor, "monome") != 0) {
+	 return 0;
+     }
+
+     if (strcmp(model, "grid") == 0) {	    
+	 // a monome grid
+	 return 1;
+     }
+     if (strcmp(model, "monome") == 0) {
+	 // probably a clone
+	 return 1;
+     }
+
+     return 0;
  }
