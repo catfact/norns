@@ -16,6 +16,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/stat.h>
+
 #include "device.h"
 #include "device_hid.h"
 #include "device_list.h"
@@ -23,6 +25,8 @@
 //#include "device_tty.h"
 
 #include "events.h"
+
+#define DEVICE_MONITOR_DEBUG
 
 #define SUB_NAME_SIZE 32
 #define NODE_NAME_SIZE 128
@@ -158,6 +162,7 @@ int dev_monitor_scan(void) {
     for (int fidx=0; fidx < DEV_FILE_COUNT; ++fidx) {
 	struct udev_enumerate *ue;
         struct udev_list_entry *devices, *dev_list_entry;
+	struct stat statbuf;
 	
 	ue = udev_enumerate_new(udev);		
 	udev_enumerate_add_match_subsystem(ue, dev_file_name[fidx]);
@@ -168,12 +173,19 @@ int dev_monitor_scan(void) {
             const char *path;
 
             path = udev_list_entry_get_name(dev_list_entry);
-            dev = udev_device_new_from_syspath(udev, path);
+	    
+	    if (stat(path, &statbuf) < 0 || !S_ISCHR(statbuf.st_mode)) {
+		fprintf(stderr, "dev_monitor_scan error: couldn't stat %s\n", path);
+
+		return 0;
+	    }
+
+            dev = udev_device_new_from_devnum(udev, 'c', statbuf.st_rdev);
 
             if (dev != NULL) {
 		add_dev(dev, fidx);
-                udev_device_unref(dev);
             }
+	    udev_device_unref(dev);
         }
 	
         udev_enumerate_unref(ue);
@@ -254,14 +266,13 @@ int rm_dev(struct udev_device *dev, int dev_file) {
 
 
  void add_dev(struct udev_device *dev, int fidx) {
-#if 1
-     // debug:
+#ifdef DEVICE_MONITOR_DEBUG
      const char *node = udev_device_get_devnode(dev);
      fprintf(stderr, "adding device: %s\n", node);
 #endif
      
      switch(fidx) {
-     case DEV_FILE_TTY:
+     case DEV_FILE_TTY:	 
 	 add_dev_tty(dev);
 	 break;
      case DEV_FILE_INPUT:
@@ -279,20 +290,33 @@ int rm_dev(struct udev_device *dev, int dev_file) {
 
  void add_dev_tty(struct udev_device *dev) {
      const char *node = udev_device_get_devnode(dev);
-     if (fnmatch("/dev/ttyUSB*", node, 0)) {
-	 // assume this is an "old" monome device
+
+#ifdef DEVICE_MONITOR_DEBUG
+     fprintf(stderr, "add_dev_tty: %s\n", node);
+#endif
+
+     if (fnmatch("/dev/ttyUSB*", node, 0) == 0) {
+#ifdef DEVICE_MONITOR_DEBUG
+	 fprintf(stderr, "got ttyUSB, assuming grid\n");
+#endif
 	 dev_list_add(DEV_TYPE_MONOME, node, get_device_name(dev));
 	 return;
      }
+     
      if (is_dev_monome_grid(dev)) {
-	 // device passes vendor/model check for new grids (and clones?)
-	 dev_list_add(DEV_TYPE_MONOME, node, get_device_name(dev));
-     } else {
-	 // FIXME:
-	 // if it's not a grid, we assume it's a crow
-	 dev_list_add(DEV_TYPE_CROW, node, get_device_name(dev));
+#ifdef DEVICE_MONITOR_DEBUG
+     fprintf(stderr, "tty appears to be grid-st\n");
+#endif
+     dev_list_add(DEV_TYPE_MONOME, node, get_device_name(dev));
+     return;
      }
-				
+
+     
+#ifdef DEVICE_MONITOR_DEBUG
+     fprintf(stderr, "assuming this tty is a crow\n");
+#endif
+     dev_list_add(DEV_TYPE_CROW, node, get_device_name(dev));
+    				
  }
  
  void add_dev_input(struct udev_device *dev) {
