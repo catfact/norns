@@ -73,8 +73,8 @@ pthread_t watch_tid;
 
 //--------------------------------
 //--- static function declarations
-static int rm_dev(struct udev_device *dev, int dev_file);
-static int rm_dev_tty(struct udev_device *dev, const char *node);
+static void rm_dev(struct udev_device *dev, int dev_file);
+static void rm_dev_tty(struct udev_device *dev, const char *node);
 
 static void add_dev(struct udev_device *dev, int dev_file);
 static void add_dev_tty(struct udev_device *dev);
@@ -239,10 +239,10 @@ int dev_monitor_scan(void) {
 
 //-------------------------------
 //--- static function definitions
-int rm_dev(struct udev_device *dev, int dev_file) {     
+void rm_dev(struct udev_device *dev, int dev_file) {     
     const char *node = udev_device_get_devnode(dev);
     if (node == NULL ) {
-	return 1;
+	return;
     }
     switch(dev_file) {
     case DEV_FILE_TTY:
@@ -258,14 +258,33 @@ int rm_dev(struct udev_device *dev, int dev_file) {
     default:
 	;;
     }
-    return 0;
 }
  
- int rm_dev_tty(struct udev_device *dev, const char *node) {
-     // TODO
-     (void)dev;
-     (void)node;
-     return 0;
+ void rm_dev_tty(struct udev_device *dev, const char *node) {     
+#ifdef DEVICE_MONITOR_DEBUG
+     fprintf(stderr, "add_dev_tty: %s\n", node);
+#endif
+
+     if (fnmatch("/dev/ttyUSB*", node, 0) == 0) {
+#ifdef DEVICE_MONITOR_DEBUG
+	 fprintf(stderr, "got ttyUSB, assuming grid\n");
+#endif
+	 dev_list_remove(DEV_TYPE_MONOME, node);
+	 return;
+     }
+     
+     if (is_dev_monome_grid(dev)) {
+#ifdef DEVICE_MONITOR_DEBUG
+	 fprintf(stderr, "tty appears to be grid-st\n");
+#endif
+	 dev_list_remove(DEV_TYPE_MONOME, node);
+	 return;
+     }
+     
+#ifdef DEVICE_MONITOR_DEBUG
+     fprintf(stderr, "assuming this tty is a crow\n");
+#endif
+     dev_list_remove(DEV_TYPE_CROW, node);
  }
 
 
@@ -309,10 +328,10 @@ int rm_dev(struct udev_device *dev, int dev_file) {
      
      if (is_dev_monome_grid(dev)) {
 #ifdef DEVICE_MONITOR_DEBUG
-     fprintf(stderr, "tty appears to be grid-st\n");
+	 fprintf(stderr, "tty appears to be grid-st\n");
 #endif
-     dev_list_add(DEV_TYPE_MONOME, node, get_device_name(dev));
-     return;
+	 dev_list_add(DEV_TYPE_MONOME, node, get_device_name(dev));
+	 return;
      }
      
 #ifdef DEVICE_MONITOR_DEBUG
