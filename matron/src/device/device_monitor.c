@@ -303,7 +303,7 @@ void add_dev_sound(struct udev_device *dev) {
     // try to act according to
     // https://github.com/systemd/systemd/blob/master/rules/78-sound-card.rules
     const char *alsa_node = get_alsa_midi_node(dev);
-    fprintf(stderr, "add_dev_sound(): %s\n", alsa_node);
+    fprintf(stderr, "add_dev_sound(): %p / %s\n", dev, alsa_node);
     if (alsa_node != NULL) {
         dev_list_add(DEV_TYPE_MIDI, alsa_node, get_device_name(dev));
     }
@@ -323,6 +323,8 @@ const char *get_alsa_midi_node(struct udev_device *dev) {
     if (strcmp(subsys, "sound") == 0) {
         syspath = udev_device_get_syspath(dev);
         sysdir = opendir(syspath);
+
+	fprintf(stderr, "checking midi udev; syspath = %s; sysdir = %s\n", syspath, sysdir);
 
         while ((sysdir_ent = readdir(sysdir)) != NULL) {
             if (sscanf(sysdir_ent->d_name, "midiC%uD%u", &alsa_card, &alsa_dev) == 2) {
