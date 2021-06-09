@@ -324,7 +324,7 @@ const char *get_alsa_midi_node(struct udev_device *dev) {
         syspath = udev_device_get_syspath(dev);
         sysdir = opendir(syspath);
 
-	fprintf(stderr, "checking midi udev; syspath = %s; sysdir = %s\n", syspath, sysdir);
+	fprintf(stderr, "checking midi udev; syspath = %s; sysdir = %p\n", syspath, sysdir);
 
         while ((sysdir_ent = readdir(sysdir)) != NULL) {
             if (sscanf(sysdir_ent->d_name, "midiC%uD%u", &alsa_card, &alsa_dev) == 2) {
