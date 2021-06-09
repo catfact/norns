@@ -327,7 +327,7 @@ const char *get_alsa_midi_node(struct udev_device *dev) {
 	fprintf(stderr, "checking midi udev; syspath = %s; sysdir = %p\n", syspath, sysdir);
 
         while ((sysdir_ent = readdir(sysdir)) != NULL) {
-	    fprintf(stderr, "checking dir_ent: %s\n",, sysdir_ent->d_name);
+	    fprintf(stderr, "checking dir_ent: %s\n", sysdir_ent->d_name);
             if (sscanf(sysdir_ent->d_name, "midiC%uD%u", &alsa_card, &alsa_dev) == 2) {
                 if (asprintf(&result, "/dev/snd/%s", sysdir_ent->d_name) < 0) {
                     fprintf(stderr, "failed to create alsa device path for %s\n", sysdir_ent->d_name);
