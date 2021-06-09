@@ -259,6 +259,7 @@ void add_dev(struct udev_device *dev, int fidx) {
     const char *node = udev_device_get_devnode(dev);
     fprintf(stderr, "adding device: %s\n", node);
 #endif
+    fprintf(stderr, "scanning device; node = %s; fidx = %d\n", node, fidx);
 
     switch (fidx) {
     case DEV_FILE_TTY:
