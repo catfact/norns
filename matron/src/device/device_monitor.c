@@ -23,7 +23,7 @@
 
 #include "events.h"
 
-//#define DEVICE_MONITOR_DEBUG
+#define DEVICE_MONITOR_DEBUG
 
 #define SUB_NAME_SIZE 32
 #define NODE_NAME_SIZE 128
@@ -333,13 +333,11 @@ void add_dev_sound(struct udev_device *dev) {
     // try to act according to
     // https://github.com/systemd/systemd/blob/master/rules/78-sound-card.rules
     const char *alsa_node = get_alsa_midi_node(dev);
-    fprintf(stderr, "add_dev_sound(): %p / %s\n", dev, alsa_node);
+    fprintf(stderr, "add_dev_sound(): %p ( %s)\n", dev, alsa_node);
     if (alsa_node != NULL) {
         dev_list_add(DEV_TYPE_MIDI, alsa_node, get_device_name(dev));
     }
 }
-
-#if 1
 
 // try to get midi device node from udev_device
 const char *get_alsa_midi_node(struct udev_device *dev) {
@@ -371,36 +369,6 @@ const char *get_alsa_midi_node(struct udev_device *dev) {
 
     return result;
 }
-
-#else
-// try to get midi device node from udev_device
-const char *get_alsa_midi_node(struct udev_device *dev) {
-    const char *subsys;
-    const char *syspath;
-    DIR *sysdir;
-    struct dirent *sysdir_ent;
-    int alsa_card, alsa_dev;
-    char *result = NULL;
-
-    subsys = udev_device_get_subsystem(dev);
-
-    if (strcmp(subsys, "sound") == 0) {
-        syspath = udev_device_get_syspath(dev);
-        sysdir = opendir(syspath);
-
-        while ((sysdir_ent = readdir(sysdir)) != NULL) {
-            if (sscanf(sysdir_ent->d_name, "midiC%uD%u", &alsa_card, &alsa_dev) == 2) {
-                if (asprintf(&result, "/dev/snd/%s", sysdir_ent->d_name) < 0) {
-                    fprintf(stderr, "failed to create alsa device path for %s\n", sysdir_ent->d_name);
-                    return NULL;
-                }
-            }
-        }
-    }
-
-    return result;
-}
-#endif
 
 const char *get_device_name(struct udev_device *dev) {
     char *current_name = NULL;
