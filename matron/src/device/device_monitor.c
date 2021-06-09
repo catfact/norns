@@ -255,7 +255,7 @@ void add_dev(struct udev_device *dev, int fidx) {
     if (node == NULL) {
         return;
     }
-    fprintf(stderr, "scanning device: %s\n", node);
+    fprintf(stderr, "scanning device; node = %s; fidx = %d\n", node, fidx);
     switch (fidx) {
     case DEV_FILE_TTY:
         add_dev_tty(dev);
@@ -303,9 +303,9 @@ void add_dev_sound(struct udev_device *dev) {
     // try to act according to
     // https://github.com/systemd/systemd/blob/master/rules/78-sound-card.rules
     const char *alsa_node = get_alsa_midi_node(dev);
+    fprintf(stderr, "add_dev_sound(): %s\n", alsa_node);
     if (alsa_node != NULL) {
 	char *name = get_device_name(dev);
-	fprintf(stderr, "add_dev_sound(): %s\n", name);
         dev_list_add(DEV_TYPE_MIDI, alsa_node, name);
     }
 }
