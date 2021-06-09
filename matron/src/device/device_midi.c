@@ -86,6 +86,7 @@ int dev_midi_init(void *self, unsigned int port_index, bool multiport_device) {
     base->start = &dev_midi_start;
     base->deinit = &dev_midi_deinit;
 
+    fprintf(stderr, "initialized new midi device: %s\n", base->path);
     return 0;
 }
 
