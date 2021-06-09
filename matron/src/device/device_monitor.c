@@ -252,9 +252,11 @@ void rm_dev_tty(struct udev_device *dev, const char *node) {
 
 void add_dev(struct udev_device *dev, int fidx) {
     const char *node = udev_device_get_devnode(dev);
+    /*
     if (node == NULL) {
         return;
     }
+    */
     fprintf(stderr, "scanning device; node = %s; fidx = %d\n", node, fidx);
     switch (fidx) {
     case DEV_FILE_TTY:
