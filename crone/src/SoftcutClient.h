@@ -14,6 +14,7 @@
 #include "softcut/Softcut.h"
 #include "softcut/Types.h"
 
+#include "ClientLoadMonitor.h"
 
 namespace crone {
     class SoftcutClient: public Client<2, 2> {
@@ -29,6 +30,7 @@ namespace crone {
         typedef Bus<1, MaxBlockFrames> MonoBus;
     public:
         SoftcutClient();
+        ~SoftcutClient();
 
     private:
         // processors
@@ -143,6 +145,10 @@ namespace crone {
         void clearBusses(size_t numFrames);
         void mixInput(size_t numFrames);
         void mixOutput(size_t numFrames);
+
+
+    private:
+        ClientLoadMonitor loadMonitor;
     };
 }
 

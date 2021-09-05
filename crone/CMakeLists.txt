@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(crone VERSION 1.0.0)
+project(crone)
 
 add_subdirectory(softcut/softcut-lib)
 
@@ -19,11 +19,11 @@ set (SRC src/main.cpp
         softcut/softcut-lib/src/ReadWriteHead.cpp
         softcut/softcut-lib/src/SubHead.cpp
         softcut/softcut-lib/src/Svf.cpp
-        softcut/softcut-lib/src/Voice.cpp )
+        softcut/softcut-lib/src/Voice.cpp src/ClientLoadMonitor.h ../common/shmem_protocol.h src/Shmem.hpp src/Shmem.cpp)
 
 add_executable(crone ${SRC})
 
-include_directories(./faust ./softcut/softcut-lib/include lib/readerwriterqueue)
+include_directories(./faust ./softcut/softcut-lib/include lib/readerwriterqueue ../common)
 
 if(UNIX)
     if(APPLE)
@@ -38,6 +38,7 @@ if(UNIX)
         target_link_libraries(crone pthread)
         target_link_libraries(crone asound)
         target_link_libraries(crone sndfile)
+        target_link_libraries(crone rt)
     endif()
     target_link_libraries(crone softcut)
 else()
