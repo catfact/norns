@@ -5,7 +5,7 @@
 #ifndef NORNS_SHMEM_PROTOCOL_H
 #define NORNS_SHMEM_PROTOCOL_H
 
-#define NORNS_SHMEM_NAME "/norns_shmem"
+#define NORNS_SHMEM_NAME "/norns"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -19,7 +19,7 @@ extern "C" {
 
 struct softcut_shmem_data {
     float phase;
-    float handleLoad;
+    float commandsLoad;
     float processLoad;
 };
 

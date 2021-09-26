@@ -6,6 +6,7 @@
 #define CRONE_CUTCLIENT_H
 
 #include <iostream>
+#include <utility>
 
 #include "BufDiskWorker.h"
 #include "Bus.h"
@@ -30,7 +31,7 @@ namespace crone {
         typedef Bus<1, MaxBlockFrames> MonoBus;
     public:
         SoftcutClient();
-        ~SoftcutClient();
+        ~SoftcutClient() override;
 
     private:
         // processors
@@ -57,7 +58,7 @@ namespace crone {
         void process(jack_nframes_t numFrames) override;
         void setSampleRate(jack_nframes_t) override;
         inline size_t secToFrame(float sec) {
-            return static_cast<size_t >(sec * jack_get_sample_rate(Client::client));
+            return static_cast<size_t >(sec * static_cast<float>(jack_get_sample_rate(Client::client)));
         }
 
     public:
@@ -69,13 +70,15 @@ namespace crone {
         //-- time parameters are in seconds
         //-- negative 'dur' parameter reads/clears/writes as much as possible.
         void readBufferMono(const std::string &path, float startTimeSrc = 0.f, float startTimeDst = 0.f,
-                            float dur = -1.f, int chanSrc = 0, int chanDst = 0, float preserve = 0.f, float mix = 1.f) {
-            BufDiskWorker::requestReadMono(bufIdx[chanDst], path, startTimeSrc, startTimeDst, dur, chanSrc, preserve, mix);
+                            float dur = -1.f, int chanSrc = 0, int chanDst = 0, float preserve = 0.f, float level = 1.f) {
+            BufDiskWorker::requestReadMono(bufIdx[chanDst], path, startTimeSrc, startTimeDst, dur, chanSrc, preserve,
+                                           level);
         }
 
         void readBufferStereo(const std::string &path, float startTimeSrc = 0.f, float startTimeDst = 0.f,
-                              float dur = -1.f, float preserve = 0.f, float mix = 1.f) {
-            BufDiskWorker::requestReadStereo(bufIdx[0], bufIdx[1], path, startTimeSrc, startTimeDst, dur, preserve, mix);
+                              float dur = -1.f, float preserve = 0.f, float level = 1.f) {
+            BufDiskWorker::requestReadStereo(bufIdx[0], bufIdx[1], path, startTimeSrc, startTimeDst, dur, preserve,
+                                             level);
         }
 
         void writeBufferMono(const std::string &path, float start, float dur, int chan) {
@@ -108,7 +111,7 @@ namespace crone {
 
         void renderSamples(int chan, float start, float dur, int count, BufDiskWorker::RenderCallback callback) {
             if (chan < 0 || chan > 1 || count < 1) { return; }
-            BufDiskWorker::requestRender(bufIdx[chan], start, dur, count, callback);
+            BufDiskWorker::requestRender(bufIdx[chan], start, dur, count, std::move(callback));
         }
 
         // check if quantized phase has changed for a given voice
@@ -133,7 +136,7 @@ namespace crone {
             cut.setPhaseOffset(i, sec);
         }
 
-        int getNumVoices() const { return NumVoices; }
+        static int getNumVoices() { return NumVoices; }
 
         float getPosition(int i) {
            return cut.getSavedPosition(i);
@@ -149,6 +152,7 @@ namespace crone {
 
     private:
         ClientLoadMonitor loadMonitor;
+        float sampleRate;
     };
 }
 

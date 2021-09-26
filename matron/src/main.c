@@ -126,7 +126,8 @@ int main(int argc, char **argv) {
 }
 
 void print_version(void) {
-    printf("MATRON\n");
-    printf("norns version: %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-    printf("git hash: %s\n\n", VERSION_HASH);
+    // FIXME, i guess
+//    printf("MATRON\n");
+//    printf("norns version: %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+//    printf("git hash: %s\n\n", VERSION_HASH);
 }

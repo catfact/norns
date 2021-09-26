@@ -14,6 +14,7 @@ namespace crone {
             float ratioCommands;
             float ratioProcess;
         };
+        Results results;
         std::chrono::time_point<std::chrono::high_resolution_clock> t0;
         long long usCommands;
         long long usProcess;
@@ -27,18 +28,19 @@ namespace crone {
             usCommands = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
             t0 = t1;
         }
-        void finishProcess() {
+
+        void finishProcess(double seconds) {
             auto t1 = std::chrono::high_resolution_clock::now();
             usProcess = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0).count();
             t0 = t1;
+            // reciprocal of microseconds
+            double rus = 1.0 / (seconds * 1000000.0);
+            results.ratioCommands = static_cast<float>(static_cast<double>(usCommands) * rus);
+            results.ratioProcess = static_cast<float>(static_cast<double>(usProcess) * rus);
         }
 
-        Results getResults (double secs) const {
-            double rus = 1.0 / (secs * 1000000.0);
-            return Results{
-                    static_cast<float>(static_cast<double>(usCommands) * rus),
-                    static_cast<float>(static_cast<double>(usProcess) * rus)
-            };
+        const Results &getResults () const {
+            return results;
         }
 
     };

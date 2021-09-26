@@ -148,12 +148,16 @@ void o_init(void) {
     const char *crone_port = args_crone_port();
 
     fprintf(stderr, "OSC rx port: %s \nOSC crone port: %s\nOSC ext port: %s\n", local_port, crone_port, ext_port);
+
     o_init_descriptors();
 
     ext_addr = lo_address_new("127.0.0.1", ext_port);
     crone_addr = lo_address_new("127.0.0.1", crone_port);
-    st = lo_server_thread_new(local_port, lo_error_handler);
+    st = lo_server_thread_new(local_port, lo_error_handler)
 
+	fprintf(stderr, "max OSC message size: %d\n", lo_server_max_msg_size(lo_server_thread_get_server(st)));
+        
+    
     // crone ready
     lo_server_thread_add_method(st, "/crone/ready", "", handle_crone_ready, NULL);
     // engine report sequence

@@ -11,7 +11,9 @@
 
 // clamp to upper bound (unsigned int)
 static inline void clamp(size_t &x, const size_t max) {
-    if (x > max) { x = max; }
+    if (x > max) {
+        x = max;
+    }
 }
 
 // clamp to upper bound (float)
@@ -30,7 +32,9 @@ crone::SoftcutClient::SoftcutClient() : Client<2, 2>("softcut") {
     }
     bufIdx[0] = BufDiskWorker::registerBuffer(buf[0], BufFrames);
     bufIdx[1] = BufDiskWorker::registerBuffer(buf[1], BufFrames);
-    ShmemWriter::init();
+    if (!ShmemWriter::init()) {
+        std::cerr << "error: failed to initialize shared memory" << std::endl;
+    }
 }
 
 crone::SoftcutClient::~SoftcutClient() {
@@ -38,7 +42,10 @@ crone::SoftcutClient::~SoftcutClient() {
 }
 
 void crone::SoftcutClient::process(jack_nframes_t numFrames) {
+    loadMonitor.startBlock();
     Commands::softcutCommands.handlePending(this);
+    loadMonitor.finishCommands();
+
     clearBusses(numFrames);
     mixInput(numFrames);
     // process softcuts (overwrites output bus)
@@ -49,17 +56,25 @@ void crone::SoftcutClient::process(jack_nframes_t numFrames) {
     }
     mixOutput(numFrames);
     mix.copyTo(sink[0], numFrames);
+
+    loadMonitor.finishProcess(static_cast<float>(numFrames) / sampleRate);
+    auto res = loadMonitor.getResults();
+    auto dst = ShmemWriter::getSink();
+    dst->softcut.commandsLoad = res.ratioCommands * 100.f;
+    dst->softcut.processLoad = res.ratioProcess * 100.f;
 }
 
 void crone::SoftcutClient::setSampleRate(jack_nframes_t sr) {
-    bufDur = (float) BufFrames / sr;
+    sampleRate = static_cast<float>(sr);
+    bufDur = static_cast<float>(BufFrames) / sampleRate;
     cut.setSampleRate(sr);
 }
 
-
 void crone::SoftcutClient::clearBusses(size_t numFrames) {
     mix.clear(numFrames);
-    for (auto &b : input) { b.clear(numFrames); }
+    for (auto &b : input) {
+        b.clear(numFrames);
+    }
 }
 
 void crone::SoftcutClient::mixInput(size_t numFrames) {
@@ -91,142 +106,142 @@ void crone::SoftcutClient::handleCommand(Commands::CommandPacket *p) {
     float value = p->value;
     clamp(idx_0, NumVoices - 1);
     switch (p->id) {
-        //-- softcut routing
-        case Commands::Id::SET_ENABLED_CUT:
-            enabled[idx_0] = value > 0.f;
-            break;
-        case Commands::Id::SET_LEVEL_CUT:
-            outLevel[idx_0].setTarget(value);
-            break;;
-        case Commands::Id::SET_PAN_CUT:
-            clamp(value, -1.f, 1.f);
-            outPan[idx_0].setTarget((value / 2) + 0.5);
-            break;
-        case Commands::Id::SET_LEVEL_IN_CUT:
-            clamp(idx_1, NumVoices - 1);
-            inLevel[idx_0][idx_1].setTarget(value);
-            break;
-        case Commands::Id::SET_LEVEL_CUT_CUT:
-            clamp(idx_1, NumVoices - 1);
-            fbLevel[idx_0][idx_1].setTarget(value);
-            break;
-            //-- softcut commands
-        case Commands::Id::SET_CUT_RATE:
-            clamp(value, MinRate, MaxRate);
-            cut.setRate(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_LOOP_START:
-            clamp(value, 0.f, bufDur);
-            cut.setLoopStart(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_LOOP_END:
-            clamp(value, 0.f, bufDur);
-            cut.setLoopEnd(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_LOOP_FLAG:
-            cut.setLoopFlag(idx_0, value > 0.f);
-            break;
-        case Commands::Id::SET_CUT_FADE_TIME:
-            value = std::max(0.f, value);
-            cut.setFadeTime(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_REC_LEVEL:
-            cut.setRecLevel(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_LEVEL:
-            cut.setPreLevel(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_REC_FLAG:
-            cut.setRecFlag(idx_0, value > 0.f);
-            break;
-        case Commands::Id::SET_CUT_PLAY_FLAG:
-            cut.setPlayFlag(idx_0, value > 0.f);
-            break;
-        case Commands::Id::SET_CUT_REC_OFFSET:
-            cut.setRecOffset(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POSITION:
-            clamp(value, 0.f, bufDur);
-            cut.cutToPos(idx_0, value);
-            break;
-            // input filter
-        case Commands::Id::SET_CUT_PRE_FILTER_FC:
-            clamp(value, 10.f, 12000.f);
-            cut.setPreFilterFc(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_FC_MOD:
-            clamp(value, 0.f, 1.f);
-            cut.setPreFilterFcMod(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_RQ:
-            clamp(value, 0.0001f, 20.f);
-            cut.setPreFilterRq(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_LP:
-            cut.setPreFilterLp(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_HP:
-            cut.setPreFilterHp(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_BP:
-            cut.setPreFilterBp(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_BR:
-            cut.setPreFilterBr(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_DRY:
-            cut.setPreFilterDry(idx_0, value);
-            break;
-            // -- output filter
-        case Commands::Id::SET_CUT_POST_FILTER_FC:
-            clamp(value, 10.f, 12000.f);
-            cut.setPostFilterFc(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POST_FILTER_RQ:
-            clamp(value, 0.0001f, 20.f);
-            cut.setPostFilterRq(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POST_FILTER_LP:
-            cut.setPostFilterLp(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POST_FILTER_HP:
-            cut.setPostFilterHp(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POST_FILTER_BP:
-            cut.setPostFilterBp(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POST_FILTER_BR:
-            cut.setPostFilterBr(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_POST_FILTER_DRY:
-            cut.setPostFilterDry(idx_0, value);
-            break;
-
-        case Commands::Id::SET_CUT_LEVEL_SLEW_TIME:
-            value = std::max(0.f, value);
-            outLevel[idx_0].setTime(value);
-            break;
-        case Commands::Id::SET_CUT_PAN_SLEW_TIME:
-            value = std::max(0.f, value);
-            outPan[idx_0].setTime(value);
-            break;
-        case Commands::Id::SET_CUT_RECPRE_SLEW_TIME:
-            value = std::max(0.f, value);
-            cut.setRecPreSlewTime(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_RATE_SLEW_TIME:
-            value = std::max(0.f, value);
-            cut.setRateSlewTime(idx_0, value);
-            break;
-        case Commands::Id::SET_CUT_VOICE_SYNC:
-            clamp(idx_1, NumVoices - 1);
-            cut.syncVoice(idx_0, idx_1, value);
-            break;
-        case Commands::Id::SET_CUT_BUFFER:
-            clamp(idx_1, NumBuffers - 1);
-            cut.setVoiceBuffer(idx_0, buf[idx_1], BufFrames);
-            break;
-        default:;;
+    //-- softcut routing
+    case Commands::Id::SET_ENABLED_CUT:
+        enabled[idx_0] = value > 0.f;
+        break;
+    case Commands::Id::SET_LEVEL_CUT:
+        outLevel[idx_0].setTarget(value);
+        break;
+    case Commands::Id::SET_PAN_CUT:
+        clamp(value, -1.f, 1.f);
+        outPan[idx_0].setTarget((value / 2) + 0.5);
+        break;
+    case Commands::Id::SET_LEVEL_IN_CUT:
+        clamp(idx_1, NumVoices - 1);
+        inLevel[idx_0][idx_1].setTarget(value);
+        break;
+    case Commands::Id::SET_LEVEL_CUT_CUT:
+        clamp(idx_1, NumVoices - 1);
+        fbLevel[idx_0][idx_1].setTarget(value);
+        break;
+        //-- softcut commands
+    case Commands::Id::SET_CUT_RATE:
+        clamp(value, MinRate, MaxRate);
+        cut.setRate(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_LOOP_START:
+        clamp(value, 0.f, bufDur);
+        cut.setLoopStart(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_LOOP_END:
+        clamp(value, 0.f, bufDur);
+        cut.setLoopEnd(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_LOOP_FLAG:
+        cut.setLoopFlag(idx_0, value > 0.f);
+        break;
+    case Commands::Id::SET_CUT_FADE_TIME:
+        value = std::max(0.f, value);
+        cut.setFadeTime(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_REC_LEVEL:
+        cut.setRecLevel(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_LEVEL:
+        cut.setPreLevel(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_REC_FLAG:
+        cut.setRecFlag(idx_0, value > 0.f);
+        break;
+    case Commands::Id::SET_CUT_PLAY_FLAG:
+        cut.setPlayFlag(idx_0, value > 0.f);
+        break;
+    case Commands::Id::SET_CUT_REC_OFFSET:
+        cut.setRecOffset(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POSITION:
+        clamp(value, 0.f, bufDur);
+        cut.cutToPos(idx_0, value);
+        break;
+        // input filter
+    case Commands::Id::SET_CUT_PRE_FILTER_FC:
+        clamp(value, 10.f, 12000.f);
+        cut.setPreFilterFc(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_FC_MOD:
+        clamp(value, 0.f, 1.f);
+        cut.setPreFilterFcMod(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_RQ:
+        clamp(value, 0.0001f, 20.f);
+        cut.setPreFilterRq(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_LP:
+        cut.setPreFilterLp(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_HP:
+        cut.setPreFilterHp(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_BP:
+        cut.setPreFilterBp(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_BR:
+        cut.setPreFilterBr(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_PRE_FILTER_DRY:
+        cut.setPreFilterDry(idx_0, value);
+        break;
+        // -- output filter
+    case Commands::Id::SET_CUT_POST_FILTER_FC:
+        clamp(value, 10.f, 12000.f);
+        cut.setPostFilterFc(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POST_FILTER_RQ:
+        clamp(value, 0.0001f, 20.f);
+        cut.setPostFilterRq(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POST_FILTER_LP:
+        cut.setPostFilterLp(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POST_FILTER_HP:
+        cut.setPostFilterHp(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POST_FILTER_BP:
+        cut.setPostFilterBp(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POST_FILTER_BR:
+        cut.setPostFilterBr(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_POST_FILTER_DRY:
+        cut.setPostFilterDry(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_LEVEL_SLEW_TIME:
+        value = std::max(0.f, value);
+        outLevel[idx_0].setTime(value);
+        break;
+    case Commands::Id::SET_CUT_PAN_SLEW_TIME:
+        value = std::max(0.f, value);
+        outPan[idx_0].setTime(value);
+        break;
+    case Commands::Id::SET_CUT_RECPRE_SLEW_TIME:
+        value = std::max(0.f, value);
+        cut.setRecPreSlewTime(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_RATE_SLEW_TIME:
+        value = std::max(0.f, value);
+        cut.setRateSlewTime(idx_0, value);
+        break;
+    case Commands::Id::SET_CUT_VOICE_SYNC:
+        clamp(idx_1, NumVoices - 1);
+        cut.syncVoice(idx_0, idx_1, value);
+        break;
+    case Commands::Id::SET_CUT_BUFFER:
+        clamp(idx_1, NumBuffers - 1);
+        cut.setVoiceBuffer(idx_0, buf[idx_1], BufFrames);
+        break;
+    default:;
+        ;
     }
 }
 
