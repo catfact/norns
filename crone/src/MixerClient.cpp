@@ -10,9 +10,22 @@
 
 #include "Tape.h"
 
+#include "oracle.h"
+
 using namespace crone;
 
-MixerClient::MixerClient() : Client<6, 6>("crone") {}
+MixerClient::MixerClient() : Client<6, 6>("crone") {
+    vuPoll = std::make_unique<Poll>("vu");
+    vuPoll->setCallback([this](const char *path) {
+        o_poll_callback_vu(
+            (uint8_t) (64 * this->getInputPeakPos(0)),
+            (uint8_t) (64 * this->getInputPeakPos(1)),
+            (uint8_t) (64 * this->getOutputPeakPos(0)),
+            (uint8_t) (64 * this->getOutputPeakPos(1))
+        );
+    });
+    vuPoll->setPeriod(50);
+}
 
 void MixerClient::process(jack_nframes_t numFrames) {
     Commands::mixerCommands.handlePending(this);
