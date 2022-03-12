@@ -64,8 +64,9 @@ namespace crone {
         virtual void process(jack_nframes_t numFrames) = 0;
 
         virtual void setSampleRate(jack_nframes_t sr) = 0;
-    public:
-        virtual void handleCommand(Commands::CommandPacket *p)  = 0;
+
+    // public:
+    //     virtual void handleCommand(Commands::CommandPacket *p)  = 0;
 
     private:
         //---------------------------------
@@ -198,7 +199,6 @@ namespace crone {
             free(ports);
         }
 
-
         //---- getters
         const char* getInputPortName(int idx) {
             return jack_port_name(inPort[idx]);
@@ -214,8 +214,7 @@ namespace crone {
 
         // FIXME: surely there is a cleaner way to use templated class reference parameter, here
         template<int N, int M>
-        bool connect(Client<N,M> *other,
-                     int sinkIdx, int sourceIdx) {
+        bool connect(Client<N,M> *other, int sinkIdx, int sourceIdx) {
             if (sinkIdx >= this->getNumSinks()) {
                 std::cerr << "invalid sink index in Client::connect()" << std::endl;
                 return false;

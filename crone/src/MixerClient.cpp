@@ -15,7 +15,9 @@ using namespace crone;
 MixerClient::MixerClient() : Client<6, 6>("crone") {}
 
 void MixerClient::process(jack_nframes_t numFrames) {
-    Commands::mixerCommands.handlePending(this);
+    if (commandsEnabled) {
+        Commands::mixerCommands.handlePending(this);
+    }
 
     // copy inputs
     bus.adc_source.setFrom(source[SourceAdc], numFrames, smoothLevels.adc);
@@ -34,7 +36,6 @@ void MixerClient::process(jack_nframes_t numFrames) {
     bus.cut_sink.mixFrom(bus.adc_source, numFrames, smoothLevels.adc_cut);
     bus.cut_sink.mixFrom(bus.ext_source, numFrames, smoothLevels.ext_cut);
     bus.cut_sink.mixFrom(bus.tape, numFrames, smoothLevels.tape_cut);
-
 
     bus.ins_in.clear(numFrames);
     // process tape playback
@@ -248,7 +249,6 @@ MixerClient::EnabledList::EnabledList() {
     comp = false;
     reverb = false;
 }
-
 
 void MixerClient::setFxDefaults() {
   comp.getUi().setParamValue(CompressorParam::RATIO, 4.0);

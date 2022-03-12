@@ -30,10 +30,13 @@ crone::SoftcutClient::SoftcutClient() : Client<2, 2>("softcut") {
     }
     bufIdx[0] = BufDiskWorker::registerBuffer(buf[0], BufFrames);
     bufIdx[1] = BufDiskWorker::registerBuffer(buf[1], BufFrames);
+    commandsEnabled = true;
 }
 
 void crone::SoftcutClient::process(jack_nframes_t numFrames) {
-    Commands::softcutCommands.handlePending(this);
+    if (commandsEnabled) {
+        Commands::softcutCommands.handlePending(this);
+    }
     clearBusses(numFrames);
     mixInput(numFrames);
     // process softcuts (overwrites output bus)

@@ -49,7 +49,9 @@ namespace crone {
         // enabled flags
         bool enabled[NumVoices];
         softcut::phase_t quantPhase[NumVoices];
-	float bufDur;
+	    float bufDur;
+
+        bool commandsEnabled;
 
     private:
         void process(jack_nframes_t numFrames) override;
@@ -60,7 +62,8 @@ namespace crone {
 
     public:
         // called from audio thread
-        void handleCommand(Commands::CommandPacket *p) override;
+        void handleCommand(Commands::CommandPacket *p);
+        void setCommandsEnabled(bool enabled) { commandsEnabled=enabled; }
 
         // these accessors can be called from other threads, so don't need to go through the commands queue
         //-- buffer manipulation
@@ -143,6 +146,7 @@ namespace crone {
         void clearBusses(size_t numFrames);
         void mixInput(size_t numFrames);
         void mixOutput(size_t numFrames);
+        
     };
 }
 

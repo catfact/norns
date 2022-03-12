@@ -31,7 +31,8 @@ namespace  crone {
         /// FIXME: the "commands" structure shouldn't really be necessary.
         /// should be able to refactor most/all parameters for atomic access.
         // called from audio thread
-        void handleCommand(Commands::CommandPacket *p) override;
+        void handleCommand(Commands::CommandPacket *p);
+
     private:
         void process(jack_nframes_t numFrames) override;
         void setSampleRate(jack_nframes_t) override;
@@ -43,6 +44,7 @@ namespace  crone {
         StereoCompressor comp;
         ZitaReverb reverb;
         Tape<2> tape;
+        bool commandsEnabled;
 
         // busses
         struct BusList {
@@ -148,6 +150,7 @@ namespace  crone {
             tape.reader.stop();
         }
 
+        void setCommandsEnabled(bool enabled) { commandsEnabled=enabled; }
     };
 }
 

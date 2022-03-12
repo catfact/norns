@@ -254,6 +254,10 @@ static int _start_audio(lua_State *l);
 // restart audio (recompile sclang)
 static int _restart_audio(lua_State *l);
 
+// jack client testing
+static int _mixer_commands_enabled(lua_State *l);
+static int _cut_commands_enabled(lua_State *l);
+
 // soundfile inspection
 static int _sound_file_inspect(lua_State *l);
 
@@ -415,6 +419,10 @@ void w_init(void) {
     lua_register_norns("cut_param_ii", &_set_cut_param_ii);
     lua_register_norns("cut_param_iif", &_set_cut_param_iif);
     lua_register_norns("level_input_cut", &_set_level_input_cut);
+
+    // audio client testing
+    lua_register_norns("mixer_commands_enabled", &_mixer_commands_enabled);
+    lua_register_norns("cut_commands_enabled", &_cut_commands_enabled);
 
     // crow
     lua_register_norns("crow_send", &_crow_send);
@@ -2923,6 +2931,21 @@ int _restart_audio(lua_State *l) {
     norns_hello_start();
     return 0;
 }
+
+
+ int _mixer_commands_enabled(lua_State *l) {
+    lua_check_num_args(1);
+    int val = (int)luaL_checknumber(l, 1);
+    o_mixer_commands_enabled(val);
+    return 0;
+ }
+
+ int _cut_commands_enabled(lua_State *l) {
+    lua_check_num_args(1);
+    int val = (int)luaL_checknumber(l, 1);
+    o_cut_commands_enabled(val);
+    return 0;
+ }
 
 int _sound_file_inspect(lua_State *l) {
     lua_check_num_args(1);

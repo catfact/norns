@@ -167,3 +167,7 @@ extern void o_set_comp_mix(float level);
 extern void o_set_comp_param(const char *name, float value);
 
 extern void o_restart_audio();
+
+//--- jack client testing
+extern void o_mixer_commands_enabled(int value);
+extern void o_cut_commands_enabled(int value);

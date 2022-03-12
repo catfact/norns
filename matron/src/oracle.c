@@ -664,6 +664,13 @@ void o_set_comp_param(const char *name, float value) {
     lo_send(crone_addr, buf, "f", value);
 }
 
+void o_mixer_commands_enabled(int value) {
+    lo_send(crone_addr, "/mixer/commands_enabled", "i", value);
+}
+
+void o_cut_commands_enabled(int value) {
+    lo_send(crone_addr, "/softcut/commands_enabled", "i", value);
+}
 /////////////////////
 //////////////////////
 
@@ -855,5 +862,7 @@ void test_engine_load_done() {
         event_post(ev);
     }
 }
+
+
 
 #pragma GCC diagnostic pop

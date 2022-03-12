@@ -844,6 +844,15 @@ void OscInterface::addServerMethods() {
     });
 
 
+//--------------
+// --- testing..
+    addServerMethod("/softcut/commands_enabled", "i",  [](lo_arg **argv, int argc) {
+        softCutClient->setCommandsEnabled(argv[0]->i > 0);
+    });
+    addServerMethod("/mixer/commands_enabled", "i",  [](lo_arg **argv, int argc) {
+        mixerClient->setCommandsEnabled(argv[0]->i > 0);
+    });
+
     //------------------------
     //--- tape control
 

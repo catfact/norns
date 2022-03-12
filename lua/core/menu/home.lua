@@ -7,6 +7,8 @@ m.init = function()
   _menu.timer.time = 1
   _menu.timer.count = -1
   _menu.timer.event = function() _menu.redraw() end
+  -- read the xrun count so that it's reset when 
+  local xruns = _norns.audio_get_xrun_count()
   _menu.timer:start()
 end
 
@@ -55,6 +57,7 @@ local draw_stats = function()
   screen.move(80,10)
   local cpu = math.floor(_norns.audio_get_cpu_load())
   screen.text(tostring(cpu)..'%')
+
   local xruns = _norns.audio_get_xrun_count()
   if xruns > 0 then
     xrun_warn_count = 4
