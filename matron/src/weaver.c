@@ -639,9 +639,9 @@ int _screen_update(lua_State *l) {
  */
 int _screen_save(lua_State *l) {
     lua_check_num_args(0);
-    fprintf(stderr, ">>> weaver: screen_event_restore...\n");
+    fprintf(stderr, ">>> weaver: screen_event_save...\n");
     screen_event_save();
-    fprintf(stderr, ">>> waiting for results from screen_event_restore...\n");
+    fprintf(stderr, ">>> waiting for results from screen_event_save...\n");
     screen_results_wait();
     fprintf(stderr, ">>> received results, continuing\n");
     screen_results_free();
