@@ -36,6 +36,7 @@ m.enc = function(n,d)
 end
 
 m.redraw = function()
+  print("--- preview redraw ---")
   screen.clear()
   screen.level(15)
   if m.wait == 0 then
