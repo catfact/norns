@@ -155,17 +155,24 @@ _menu.set_mode = function(mode)
     if _menu.mode == true then _norns.screen_restore() end
     _menu.mode = false
     m[_menu.page].deinit()
+    print("--- menu.lua: play mode (clearing)")
     screen.clear()
+    print("--- menu.lua: play mode (update after clear)")
     screen.update()
+    print("--- menu.lua: play mode (assigning script redraw)")
     redraw = norns.script.redraw
     _menu.key = key
     norns.encoders.callback = enc
     norns.enc.resume()
+    print("--- menu.lua: play mode (running script redraw)")
     redraw()
   elseif mode == true then -- ACTIVATE MENu MODE
+
+    print("--- menu.lua: edit mode (screen/save)")
     if _menu.mode == false then _norns.screen_save() end
     _menu.mode = true
     _menu.alt = false
+    print("--- menu.lua: edit mode (assigning no-op redraw)")
     redraw = norns.none
     screen.font_face(1)
     screen.font_size(8)
@@ -177,6 +184,7 @@ _menu.set_mode = function(mode)
     norns.encoders.set_sens(2,2)
     norns.encoders.set_accel(3,true)
     norns.encoders.set_sens(3,2)
+    print("--- menu.lua: edit mode (setting page)")
     _menu.set_page(_menu.page)
   end
 end
@@ -195,6 +203,7 @@ _menu.set_page = function(page)
   _menu.custom_gamepad_button = m[page].gamepad_button
   _menu.custom_gamepad_analog = m[page].gamepad_analog
   m[page].init()
+  print("--- menu.lua: edit mode (page redraw)")
   _menu.redraw()
 end
 

@@ -6,6 +6,7 @@ typedef enum {
     SCREEN_RESULTS_TEXT_EXTENTS,
     SCREEN_RESULTS_CURRENT_POINT,
     SCREEN_RESULTS_PEEK,
+    SCREEN_RESULTS_SIGNAL,
 } screen_results_t;
 
 struct screen_results_common { 
@@ -38,12 +39,19 @@ struct screen_results_peek {
     char* buf;
 };
 
+// dummy event with no payload
+struct screen_results_signal { 
+    struct screen_results_common common;
+};
+
 union screen_results_data { 
     uint32_t type;
     struct screen_results_text_extents text_extents;
     struct screen_results_current_point current_point;
     struct screen_results_peek peek;
+    struct screen_results_signal signal;
 };
+
 
 extern void screen_results_init();
 extern void screen_results_deinit();

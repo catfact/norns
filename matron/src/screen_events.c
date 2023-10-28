@@ -59,6 +59,10 @@ static void screen_event_data_move(struct screen_event_data *dst, struct screen_
 
 // call from any thread; locks Q (blocking)
 void screen_event_data_push(struct screen_event_data *src) {
+    fprintf(stderr, "screen_event_data_push: %d\n", src->type);
+    if (src->type == SCREEN_EVENT_UPDATE) {
+        fprintf(stderr, "### pushing SCREEN_EVENT_UPDATE\n");
+    }
     pthread_mutex_lock(&screen_q_lock);
     struct screen_event_data *dst = &(screen_q[screen_q_wr]);
     screen_event_data_move(dst, src);
@@ -98,8 +102,10 @@ void *screen_event_loop(void *x) {
 
 void handle_screen_event(struct screen_event_data *ev) {
     assert(ev->type != SCREEN_EVENT_NONE);
+    fprintf(stderr, "handle_screen_event: %d\n", ev->type);
     switch (ev->type) {
     case SCREEN_EVENT_UPDATE:
+        fprintf(stderr, "### handling SCREEN_EVENT_UPDATE\n");
         screen_update();
         break;
     case SCREEN_EVENT_SAVE:

@@ -304,10 +304,14 @@ void screen_update(void) {
 
 void screen_save(void) {
     cairo_save(cr);
+    union screen_results_data* results = screen_results_data_new(SCREEN_RESULTS_SIGNAL);
+    screen_results_post(results);
 }
 
 void screen_restore(void) {
     cairo_restore(cr);
+    union screen_results_data* results = screen_results_data_new(SCREEN_RESULTS_SIGNAL);
+    screen_results_post(results);
 }
 
 void screen_font_face(int i) {
