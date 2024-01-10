@@ -18,8 +18,7 @@ MixerClient::MixerClient() : Client<6, 6>("crone") {}
 void MixerClient::process(jack_nframes_t numFrames) {
 
     Commands::mixerCommands.handlePending(this);
-
-
+    
     // copy inputs
     bus.adc_source.setFrom(source[SourceAdc], numFrames, smoothLevels.adc);
     bus.cut_source.setFrom(source[SourceCut], numFrames, smoothLevels.cut);
@@ -35,9 +34,24 @@ void MixerClient::process(jack_nframes_t numFrames) {
     // mix ADC->cut, ext->cut, tape->cut
     bus.cut_sink.clear(numFrames);
     bus.cut_sink.mixFrom(bus.adc_source, numFrames, smoothLevels.adc_cut);
-    bus.cut_sink.mixFrom(bus.ext_source, numFrames, smoothLevels.ext_cut);
     bus.cut_sink.mixFrom(bus.tape, numFrames, smoothLevels.tape_cut);
 
+    //bus.cut_sink.mixFrom(bus.ext_source, numFrames, smoothLevels.ext_cut);
+
+    switch(extCutMode) { 
+        case ExtCutMode::ExtCut:
+            bus.cut_sink.mixFrom(bus.ext_source, numFrames, smoothLevels.ext_cut);
+            break;
+        case ExtCutMode::CutExt:
+            // NB: in this mode, mixer level applies to cut->ext path instead of ext->cut
+            bus.ext_sink.mixFrom(bus.cut_source, numFrames, smoothLevels.ext_cut);
+            break;
+        case ExtCutMode::CutExtCut:
+            // NB: in this mode, mixer level applies to ext->cut path, cut->ext is unity
+            bus.cut_sink.mixFrom(bus.ext_source, numFrames, smoothLevels.ext_cut);
+            bus.ext_sink.addFrom(bus.cut_source, numFrames);
+            break;
+    }
 
     bus.ins_in.clear(numFrames);
     // process tape playback
@@ -56,6 +70,19 @@ void MixerClient::process(jack_nframes_t numFrames) {
     bus.dac_sink.mixTo(sink[SinkId::SinkDac], numFrames, smoothLevels.dac);
     bus.cut_sink.copyTo(sink[SinkId::SinkCut], numFrames);
     bus.ext_sink.copyTo(sink[SinkId::SinkExt], numFrames);
+
+    switch(extCutMode) { 
+        case ExtCutMode::ExtCut:
+            // mix ext output to cut input
+            break;
+        case ExtCutMode::CutExt:
+            // mix cut output to ext output
+            // mix ext output to cut input
+            break;
+        case ExtCutMode::CutExtCut:
+            // mix ext output to cut input
+            break;
+    }
 
     // process tape record
     if (tape.isWriting()) {
@@ -78,7 +105,6 @@ void MixerClient::setSampleRate(jack_nframes_t sr) {
 }
 
 void MixerClient::processFx(size_t numFrames) {
-    // FIXME: current faust architecture needs stupid pointer arrays.
     float* pin[2];
     float* pout[2];
     if (!enabled.reverb) { // bypass aux
@@ -202,7 +228,6 @@ MixerClient::BusList::BusList() {
     aux_out.clear();
     adc_monitor.clear();
     tape.clear();
-
 }
 
 MixerClient::SmoothLevelList::SmoothLevelList() {

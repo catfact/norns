@@ -16,7 +16,6 @@
 #include "effects/StereoCompressor.h"
 #include "effects/ZitaReverb.h"
 
-
 namespace  crone {
     class MixerClient: public Client<6, 6> {
 
@@ -25,6 +24,7 @@ namespace  crone {
         typedef enum { SourceAdc=0, SourceCut=1, SourceExt=2 } SourceId;
         typedef enum { SinkDac=0, SinkCut=1, SinkExt=2 } SinkId;
         typedef Bus<2, MaxBufFrames> StereoBus;
+        typedef enum { ExtCut=0, CutExt=1, CutExtCut=2 } ExtCutMode;
 
     public:
         MixerClient();
@@ -111,9 +111,13 @@ namespace  crone {
         };
         EnabledList enabled;
 
+        ExtCutMode extCutMode;
+        bool auxPre = false;
+        bool tapeRecInput = false;
 
         PeakMeter inPeak[2];
         PeakMeter outPeak[2];
+
 
     public:
         float getInputPeakPos(int ch) {
