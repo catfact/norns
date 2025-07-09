@@ -1,6 +1,8 @@
-#include "time_since.h"
 
 #include <time.h>
+#include <stdio.h>
+
+#include "time_since.h"
 
 struct timespec t0_cpu;
 struct timespec t0_wall;
@@ -49,5 +51,6 @@ unsigned long int cpu_time_get_delta_ns() {
  unsigned long int wall_time_get_ns() {
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC, &t1);
+    fprintf(stderr, "wall_time_get_ns: %ld.%09ld\n", t1.tv_sec, t1.tv_nsec);
     return (t1.tv_sec * 1e9) + t1.tv_nsec;
  }
