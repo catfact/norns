@@ -18,6 +18,12 @@ static struct timespec diff(const struct timespec *start, const struct timespec 
     return temp;
 }
 
+ unsigned long int cpu_time_get_ns() {
+    struct timespec t1;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
+    return (t1.tv_sec * 1e9) + t1.tv_nsec;
+ }
+
 void cpu_time_start() {
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t0_cpu);
  }
@@ -38,4 +44,10 @@ unsigned long int cpu_time_get_delta_ns() {
     clock_gettime(CLOCK_MONOTONIC, &t1);
     struct timespec delta = diff(&t0_wall, &t1);
     return (delta.tv_sec * 1e9) + delta.tv_nsec;
+ }
+
+ unsigned long int wall_time_get_ns() {
+    struct timespec t1;
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    return (t1.tv_sec * 1e9) + t1.tv_nsec;
  }
