@@ -19,7 +19,6 @@ void MixerClient::process(jack_nframes_t numFrames) {
 
     Commands::mixerCommands.handlePending(this);
 
-
     // copy inputs
     bus.adc_source.setFrom(source[SourceAdc], numFrames, smoothLevels.adc);
     bus.cut_source.setFrom(source[SourceCut], numFrames, smoothLevels.cut);

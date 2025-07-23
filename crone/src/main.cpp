@@ -36,7 +36,6 @@ int main() {
     m->start();
     sc->start();
 
-
     cout << "connecting ports... " << endl;
     m->connectAdcPorts();
     m->connectDacPorts();
@@ -46,6 +45,8 @@ int main() {
     cout << "starting OSC interface..." << endl;
     OscInterface::init(m.get(), sc.get());
     OscInterface::printServerMethods();
+    cout << "listening on port: " << OscInterface::getPortNumber() << endl;
+
 
     cout << "entering main loop..." << endl;
     while(!OscInterface::shouldQuit())  {
@@ -60,6 +61,7 @@ int main() {
     sc->cleanup();
     OscInterface::deinit();
     cout << "goodbye" << endl;
+
 #else
     std::unique_ptr<SoftcutClient> sc;
     sc = std::make_unique<SoftcutClient>();

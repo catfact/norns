@@ -13,6 +13,7 @@ Compilation options: cpp, -scal -ftz 0
 #include "faust/gui/meta.h"
 #include "faust/dsp/dsp.h"
 
+
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
 #endif 

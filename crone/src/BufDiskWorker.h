@@ -15,13 +15,13 @@
 #ifndef CRONE_BUFMANAGER_H
 #define CRONE_BUFMANAGER_H
 
-#include <atomic>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <queue>
 #include <memory>
 #include <functional>
+#include <string>
 
 namespace crone {
     // class for asynchronous management of mono audio buffers

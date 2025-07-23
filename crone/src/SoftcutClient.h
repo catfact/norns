@@ -18,8 +18,8 @@
 namespace crone {
     class SoftcutClient: public Client<2, 2> {
     public:
-        static constexpr float MaxRate = static_cast<float>(softcut::Resampler::OUT_BUF_FRAMES);
-        static constexpr float MinRate = static_cast<float>(softcut::Resampler::OUT_BUF_FRAMES * -1);
+        static constexpr float MaxRate = static_cast<float>(softcut::Resampler<>::OUT_BUF_FRAMES);
+        static constexpr float MinRate = static_cast<float>(softcut::Resampler<>::OUT_BUF_FRAMES * -1);
         enum { MaxBlockFrames = 2048};
         enum { BufFrames = 16777216 };
         enum { NumVoices = 6 };

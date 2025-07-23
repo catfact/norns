@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.13)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(crone VERSION 1.0.0)
 
 add_subdirectory(softcut/softcut-lib)
@@ -23,7 +27,7 @@ set (SRC src/main.cpp
 
 add_executable(crone ${SRC})
 
-include_directories(./faust ./softcut/softcut-lib/include lib/readerwriterqueue)
+include_directories(${PROJECT_SOURCE_DIR} faust softcut/softcut-lib/include lib/readerwriterqueue)
 
 if(UNIX)
     if(APPLE)
