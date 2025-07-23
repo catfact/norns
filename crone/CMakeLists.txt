@@ -1,13 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 project(crone VERSION 1.0.0)
 
 add_subdirectory(softcut/softcut-lib)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
@@ -20,10 +16,7 @@ set (SRC src/main.cpp
         src/Taper.cpp
         src/Window.cpp
         softcut/softcut-lib/src/FadeCurves.cpp
-        softcut/softcut-lib/src/ReadWriteHead.cpp
-        softcut/softcut-lib/src/SubHead.cpp
-        softcut/softcut-lib/src/Svf.cpp
-        softcut/softcut-lib/src/Voice.cpp )
+        softcut/softcut-lib/src/Svf.cpp)
 
 add_executable(crone ${SRC})
 
@@ -50,9 +43,9 @@ endif()
 
 
 set_target_properties(crone PROPERTIES
-CXX_STANDARD 14
+CXX_STANDARD 17
 CXX_STANDARD_REQUIRED YES
 CXX_EXTENSIONS YES
 )
 
-target_compile_options(crone PRIVATE -Wall -Wextra -pedantic)
+target_compile_options(crone PRIVATE -Wall -Wextra)

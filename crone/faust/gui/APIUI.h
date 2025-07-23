@@ -35,6 +35,9 @@
 #include "faust/gui/PathBuilder.h"
 #include "faust/gui/ValueConverter.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 class APIUI : public PathBuilder, public Meta, public UI
 {
     public:
@@ -537,5 +540,7 @@ class APIUI : public PathBuilder, public Meta, public UI
         }
 
 };
+
+#pragma GCC diagnostic pop
 
 #endif

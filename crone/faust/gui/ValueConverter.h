@@ -72,6 +72,9 @@ ZoneReader(zone, valueConverter) : a zone with a data converter
 #include <vector>
 #include <assert.h>
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 //--------------------------------------------------------------------------------------
 // Interpolator(lo,hi,v1,v2)
 // Maps a value x between lo and hi to a value y between v1 and v2
@@ -524,4 +527,6 @@ class ZoneReader
 
 };
 
+
+#pragma GCC diagnostic pop
 #endif
